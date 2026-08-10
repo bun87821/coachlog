@@ -7,6 +7,13 @@ ALTER TABLE coaches ADD COLUMN IF NOT EXISTS calendar_view text NOT NULL DEFAULT
 ALTER TABLE coaches ADD COLUMN IF NOT EXISTS availability jsonb NOT NULL DEFAULT '{"days":[1,2,3,4,5],"start":"07:00","end":"21:00"}'::jsonb;
 ALTER TABLE coaches ADD COLUMN IF NOT EXISTS default_duration integer NOT NULL DEFAULT 60;
 CREATE TABLE IF NOT EXISTS students (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), coach_id text NOT NULL REFERENCES coaches(id) ON DELETE CASCADE, name text NOT NULL, email text, phone text, notes text, created_at timestamptz DEFAULT now());
+ALTER TABLE students ADD COLUMN IF NOT EXISTS sort_order integer;
+WITH ranked_students AS (
+  SELECT id, ROW_NUMBER() OVER (PARTITION BY coach_id ORDER BY created_at DESC, id) - 1 AS position
+  FROM students s
+  WHERE NOT EXISTS (SELECT 1 FROM students ordered WHERE ordered.coach_id=s.coach_id AND ordered.sort_order IS NOT NULL)
+)
+UPDATE students SET sort_order=ranked_students.position FROM ranked_students WHERE students.id=ranked_students.id;
 CREATE INDEX IF NOT EXISTS students_coach_idx ON students(coach_id);
 CREATE TABLE IF NOT EXISTS body_metrics (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), student_id uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE, measured_at date NOT NULL DEFAULT CURRENT_DATE, weight numeric, body_fat numeric, muscle_mass numeric, created_at timestamptz DEFAULT now());
 CREATE TABLE IF NOT EXISTS exercises (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), coach_id text NOT NULL REFERENCES coaches(id) ON DELETE CASCADE, name text NOT NULL, UNIQUE(coach_id,name));

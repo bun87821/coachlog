@@ -28,8 +28,19 @@
 .student-search {
   display: grid;
   gap: 7px;
-  margin-bottom: 14px;
 }
+
+.student-list-tools { margin-bottom: 14px; }
+.student-sort-help { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.student { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.student-link { min-width: 0; }
+.student-link h3 { margin-bottom: 8px; }
+.student-link p { margin-bottom: 0; }
+.student-order-controls { display: grid; gap: 7px; }
+.student-order-controls form { margin: 0; }
+.student-order-button { width: 42px; height: 42px; padding: 0; background: var(--paper); color: var(--brand); border: 1px solid var(--line); font-size: 18px; }
+.student-order-button:hover:not(:disabled) { border-color: var(--brand); background: #e7f2eb; }
+.student-order-button:disabled { opacity: .3; cursor: not-allowed; }
 
 .session-editor {
   grid-column: 1 / -1;

@@ -10,7 +10,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const { date } = await searchParams;
   const user = await requireCoach();
   const [students, events, calendarSettings, availabilityBlocks] = await Promise.all([
-    db.query(`SELECT s.*, (SELECT weight FROM body_metrics WHERE student_id=s.id ORDER BY measured_at DESC LIMIT 1) weight FROM students s WHERE coach_id=$1 ORDER BY created_at DESC`, [user.id]),
+    db.query(`SELECT s.*, (SELECT weight FROM body_metrics WHERE student_id=s.id ORDER BY measured_at DESC LIMIT 1) weight FROM students s WHERE coach_id=$1 ORDER BY sort_order ASC NULLS LAST,created_at DESC,s.id`, [user.id]),
     listCalendarEvents(user.id),
     db.query(`SELECT calendar_view,availability,default_duration FROM coaches WHERE id=$1`, [user.id]),
     db.query(`SELECT id,blocked_date::text date,start_time::text time,duration,kind FROM availability_blocks WHERE coach_id=$1 AND blocked_date BETWEEN CURRENT_DATE - INTERVAL '3 months' AND CURRENT_DATE + INTERVAL '7 months' ORDER BY blocked_date,start_time`, [user.id]),
