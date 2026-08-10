@@ -34,7 +34,10 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
     <div className="exercise-editor">
       {exercises.map((exercise, exerciseIndex) => <div className="exercise-block" key={exerciseIndex}>
         <div className="exercise-title-row">
-          <label>動作 {exerciseIndex + 1}<input list="exercise-list" value={exercise.name} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })} placeholder="選擇或輸入新動作" required /></label>
+          <div className="exercise-name-fields">
+            <label>動作 {exerciseIndex + 1}<select aria-label={`選擇動作 ${exerciseIndex + 1}`} value={exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })}><option value="">選擇既有動作</option>{exerciseNames.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+            <label className="custom-exercise-label">或輸入新動作名稱<input list="exercise-list" value={exercise.name} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })} placeholder="例如：槓鈴深蹲" required /></label>
+          </div>
           {exercises.length > 1 && <button className="danger-link" type="button" onClick={() => setExercises(rows => rows.filter((_, index) => index !== exerciseIndex))}>移除動作</button>}
         </div>
         <div className="sets-table">
