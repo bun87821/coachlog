@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  providers: [Google({ authorization: { params: { scope: "openid email profile https://www.googleapis.com/auth/calendar.readonly", access_type: "offline", prompt: "consent" } } })],
+  providers: [Google({ authorization: { params: { scope: "openid email profile https://www.googleapis.com/auth/calendar.events", access_type: "offline", prompt: "consent" } } })],
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account && profile?.email) {

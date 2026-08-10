@@ -1,3 +1,26 @@
-import { db } from "@/lib/db";import { requireCoach } from "@/lib/guard";import { Header } from "@/components/Header";import { addStudent } from "@/app/actions";
-async function calendar(coachId:string){const c=await db.query(`SELECT google_access_token FROM coaches WHERE id=$1`,[coachId]);const token=c.rows[0]?.google_access_token;if(!token)return[];const min=new Date();const max=new Date(Date.now()+14*864e5);try{const r=await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&timeMin=${min.toISOString()}&timeMax=${max.toISOString()}&maxResults=20`,{headers:{Authorization:`Bearer ${token}`},next:{revalidate:300}});if(!r.ok)return[];return (await r.json()).items||[]}catch{return[]}}
-export default async function Dashboard(){const u=await requireCoach();const [students,events]=await Promise.all([db.query(`SELECT s.*, (SELECT weight FROM body_metrics WHERE student_id=s.id ORDER BY measured_at DESC LIMIT 1) weight FROM students s WHERE coach_id=$1 ORDER BY created_at DESC`,[u.id]),calendar(u.id)]);return <main className="shell"><Header name={u.name}/><div className="dashboard"><section><div className="section-title"><div><div className="eyebrow">學生管理</div><h1>你的學生</h1></div></div>{students.rows.length?<div className="students">{students.rows.map(s=><a className="student" key={s.id} href={`/students/${s.id}`}><h3>{s.name}</h3><div className="muted">{s.email||"尚未填寫 Email"}</div><p>{s.weight?`目前 ${s.weight} kg`:"尚無身體數據"}</p></a>)}</div>:<div className="card empty">還沒有學生，從右側新增第一位。</div>}</section><aside><div className="card"><h2>新增學生</h2><form className="stack" action={addStudent}><input name="name" placeholder="學生姓名" required/><input name="email" type="email" placeholder="Email（選填）"/><input name="phone" placeholder="電話（選填）"/><textarea name="notes" placeholder="備註"/><button>建立學生</button></form></div><div className="card" style={{marginTop:18}}><h2>近期預約</h2>{events.length?events.map((e:any)=><a className="calendar-item" key={e.id} href={e.description?.match(/student:([0-9a-f-]+)/)?.[1]?`/students/${e.description.match(/student:([0-9a-f-]+)/)[1]}`:e.htmlLink} target={e.htmlLink?"_blank":undefined}><time>{new Date(e.start?.dateTime||e.start?.date).toLocaleString("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time>{e.summary||"未命名行程"}</a>):<p className="muted">目前沒有可顯示的行程，或需重新授權 Calendar。</p>}</div></aside></div></main>}
+import { db } from "@/lib/db";
+import { requireCoach } from "@/lib/guard";
+import { listCalendarEvents } from "@/lib/google-calendar";
+import { Header } from "@/components/Header";
+import { BookingCalendar } from "@/components/BookingCalendar";
+import { addStudent } from "@/app/actions";
+
+export default async function Dashboard() {
+  const user = await requireCoach();
+  const [students, events] = await Promise.all([
+    db.query(`SELECT s.*, (SELECT weight FROM body_metrics WHERE student_id=s.id ORDER BY measured_at DESC LIMIT 1) weight FROM students s WHERE coach_id=$1 ORDER BY created_at DESC`, [user.id]),
+    listCalendarEvents(user.id),
+  ]);
+  return <main className="shell">
+    <Header name={user.name} />
+    <div className="section-title"><div><div className="eyebrow">預約管理</div><h1>訓練行事曆</h1></div></div>
+    <BookingCalendar students={students.rows.map(student => ({ id: student.id, name: student.name }))} events={events} />
+    <div className="dashboard student-section">
+      <section>
+        <div className="section-title"><div><div className="eyebrow">學生管理</div><h1>你的學生</h1></div></div>
+        {students.rows.length ? <div className="students">{students.rows.map(student => <a className="student" key={student.id} href={`/students/${student.id}`}><h3>{student.name}</h3><div className="muted">{student.email || "尚未填寫 Email"}</div><p>{student.weight ? `目前 ${student.weight} kg` : "尚無身體數據"}</p></a>)}</div> : <div className="card empty">還沒有學生，從右側新增第一位。</div>}
+      </section>
+      <aside><div className="card"><h2>新增學生</h2><form className="stack" action={addStudent}><input name="name" placeholder="學生姓名" required /><input name="email" type="email" placeholder="Email（選填）" /><input name="phone" placeholder="電話（選填）" /><textarea name="notes" placeholder="備註" /><button>建立學生</button></form></div></aside>
+    </div>
+  </main>;
+}
