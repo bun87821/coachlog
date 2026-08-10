@@ -1,44 +1,198 @@
-.weekly-periods {
+.calendar-settings {
   display: grid;
-  gap: 10px;
+  gap: 24px;
+  padding: 28px;
+  overflow: clip;
 }
 
-.weekly-periods h4,
-.weekly-periods p {
+.settings-heading,
+.periods-heading,
+.selected-weekday-head,
+.settings-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-heading h3,
+.settings-heading p,
+.periods-heading h4,
+.periods-heading p,
+.selected-weekday h4,
+.selected-weekday p {
   margin: 0;
 }
 
-.weekday-period {
+.settings-heading h3 {
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.settings-heading p,
+.periods-heading p,
+.selected-weekday p {
+  margin-top: 6px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.settings-kicker {
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.settings-close,
+.day-off-button {
+  min-height: 44px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.settings-basics {
   display: grid;
-  grid-template-columns: 54px 1fr;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 18px;
+  background: #f7f8f4;
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 
-.weekday-period > strong {
-  padding-top: 10px;
-}
-
-.weekday-period > div {
+.settings-basics label {
+  position: relative;
   display: grid;
   gap: 8px;
 }
 
-.period-row {
-  display: grid;
-  grid-template-columns: minmax(100px, 1fr) auto minmax(100px, 1fr) auto;
-  gap: 8px;
-  align-items: center;
+.settings-basics label small {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  color: var(--muted);
+  font-weight: 500;
 }
 
-.period-row input {
+.settings-basics input {
+  padding-right: 60px;
+}
+
+.weekly-periods {
+  display: grid;
+  gap: 16px;
+}
+
+.periods-heading > span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e7f2eb;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.weekday-tabs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.weekday-tabs button {
   min-width: 0;
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 9px 6px;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+  touch-action: manipulation;
+}
+
+.weekday-tabs button small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.weekday-tabs button.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.weekday-tabs button.active small {
+  color: var(--lime);
+}
+
+.selected-weekday {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  background: #fbfcf9;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.day-off-button {
+  color: #8b3a31;
+}
+
+.period-list {
+  display: grid;
+  gap: 10px;
+}
+
+.period-card {
+  display: grid;
+  grid-template-columns: 70px minmax(130px, 1fr) auto minmax(130px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.period-card label {
+  display: grid;
+  gap: 6px;
+}
+
+.period-card label > span,
+.period-number {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.period-number {
+  align-self: center;
+  color: var(--brand);
+}
+
+.period-card input {
+  min-width: 0;
+  min-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.period-arrow {
+  align-self: center;
+  color: var(--muted);
 }
 
 .add-period,
 .remove-period {
-  padding: 9px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
+  touch-action: manipulation;
 }
 
 .add-period {
@@ -53,21 +207,115 @@
   border: 1px solid var(--line);
 }
 
-@media (max-width: 600px) {
-  .weekday-period {
+.settings-error {
+  margin: 0;
+  padding: 12px 14px;
+  color: #8b2d24;
+  background: #fff1ef;
+  border: 1px solid #efc4bd;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.settings-actions {
+  position: sticky;
+  bottom: 0;
+  justify-content: flex-end;
+  margin: 0 -28px -28px;
+  padding: 16px 28px;
+  background: rgba(255, 255, 255, .96);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -8px 24px rgba(23, 33, 27, .06);
+}
+
+.settings-actions button {
+  min-height: 46px;
+}
+
+.settings-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.calendar-settings button:focus-visible,
+.calendar-settings input:focus-visible,
+.calendar-settings select:focus-visible {
+  outline: 3px solid rgba(23, 107, 69, .3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .calendar-settings {
+    gap: 20px;
+    padding: 18px;
+  }
+
+  .settings-heading,
+  .periods-heading,
+  .selected-weekday-head {
+    align-items: flex-start;
+  }
+
+  .settings-heading {
+    display: grid;
+  }
+
+  .settings-close {
+    justify-self: start;
+  }
+
+  .settings-basics {
     grid-template-columns: 1fr;
   }
 
-  .weekday-period > strong {
-    padding-top: 0;
+  .weekday-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .period-row {
+  .periods-heading > span {
+    display: none;
+  }
+
+  .period-card {
     grid-template-columns: 1fr auto 1fr;
   }
 
-  .period-row .remove-period {
+  .period-number {
+    grid-column: 1 / -1;
+  }
+
+  .period-card .remove-period {
     grid-column: 1 / -1;
     justify-self: start;
+  }
+
+  .settings-actions {
+    margin: 0 -18px -18px;
+    padding: 12px 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .selected-weekday-head {
+    display: grid;
+  }
+
+  .period-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .period-arrow {
+    display: none;
+  }
+
+  .settings-actions button {
+    flex: 1;
+    padding-inline: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weekday-tabs button {
+    transition: none;
   }
 }
