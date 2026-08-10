@@ -301,11 +301,15 @@
   }
 
   .period-card {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .period-arrow {
     display: none;
+  }
+
+  .period-card input {
+    width: 100%;
   }
 
   .settings-actions button {
