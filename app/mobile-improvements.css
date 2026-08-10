@@ -17,6 +17,9 @@
 .home-actions .button {
   width: 100%;
   min-height: 64px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
