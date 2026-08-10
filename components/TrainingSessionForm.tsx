@@ -8,7 +8,7 @@ type SetRow = { reps: string; weight: string; unit: "kg" | "lb" };
 type ExerciseRow = { name: string; sets: SetRow[] };
 type TemplateExercise = { name: string; sets: Array<{ reps: number | null; weight: number | null; unit: "kg" | "lb" }> };
 const newSet = (): SetRow => ({ reps: "10", weight: "", unit: "kg" });
-const newExercise = (): ExerciseRow => ({ name: "", sets: [newSet(), newSet(), newSet()] });
+const newExercise = (): ExerciseRow => ({ name: "", sets: [newSet(), newSet(), newSet(), newSet()] });
 
 type EditableSession = { id: string; occurredAt: string; notes: string | null; exercises: TemplateExercise[] };
 
