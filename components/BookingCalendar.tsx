@@ -9,9 +9,13 @@ type CalendarEvent = { id: string; summary?: string; description?: string; htmlL
 type ViewMode = "month" | "week" | "day";
 type Settings = { view: ViewMode; availability: { days: number[]; start: string; end: string }; duration: number };
 
-const keyFor = (value: string | Date) => { const date = new Date(value); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
+const keyFor = (value: string | Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
+  const part = (type: string) => parts.find(item => item.type === type)?.value || "";
+  return `${part("year")}-${part("month")}-${part("day")}`;
+};
 const dateFor = (key: string) => new Date(`${key}T12:00:00`);
-const timeFor = (value?: string) => value ? new Date(value).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" }) : "全天";
+const timeFor = (value?: string) => value ? new Date(value).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Taipei" }) : "全天";
 const minutes = (value: string) => { const [hour, minute] = value.split(":").map(Number); return hour * 60 + minute; };
 const clock = (value: number) => `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
 

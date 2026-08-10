@@ -142,6 +142,7 @@ textarea {
 .compact-day span { font-size: 10px; color: var(--muted); }
 .compact-day.selected { color: white; background: var(--brand); }
 .compact-day.selected small,.compact-day.selected span { color: white; }
+.compact-day.selected small.available,.compact-day.selected small.limited,.compact-day.selected small.full { color: white; }
 .compact-day.blank { background: #fafaf7; }
 .compact-day small.available { color: var(--brand); }
 .compact-day small.limited { color: #b66a00; }
