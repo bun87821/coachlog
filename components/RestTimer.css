@@ -1,0 +1,123 @@
+.rest-timer {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f8faf6;
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.rest-timer.running {
+  border-color: var(--brand);
+  background: #f1f8f3;
+}
+
+.rest-timer.done {
+  border-color: #9eb42d;
+  background: #f7fbdc;
+}
+
+.rest-timer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rest-timer-head span {
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.rest-timer-head h3 {
+  margin: 3px 0 0;
+  font-size: 18px;
+}
+
+.rest-timer-head output {
+  color: var(--ink);
+  font-size: 32px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.timer-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.timer-presets button {
+  min-height: 44px;
+  padding: 8px;
+  color: var(--brand);
+  border: 1px solid #bcd6c5;
+  background: #fff;
+  touch-action: manipulation;
+}
+
+.custom-timer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.custom-timer label {
+  min-width: 0;
+}
+
+.custom-timer input {
+  min-width: 0;
+  margin-top: 6px;
+}
+
+.custom-timer button,
+.timer-controls button {
+  min-height: 44px;
+}
+
+.custom-timer button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.timer-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.timer-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rest-timer.done .timer-status {
+  color: #52610c;
+}
+
+.rest-timer button:focus-visible,
+.rest-timer input:focus-visible {
+  outline: 3px solid rgba(23, 107, 69, .3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 540px) {
+  .timer-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rest-timer {
+    transition: none;
+  }
+}
