@@ -23,7 +23,7 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
   };
 
   return <form className="stack" action={action}>
-    {lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW")} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
+    {lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW", { timeZone: "UTC" })} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
     <label>上課時間<input name="date" type="datetime-local" required /></label>
     <textarea name="notes" placeholder="本次課程備註、學生狀態或下次調整方向" />
     <input type="hidden" name="exercisesJson" value={JSON.stringify(exercises)} />
