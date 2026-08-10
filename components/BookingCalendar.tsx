@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createAppointment } from "@/app/actions";
 import { saveCalendarSettings } from "@/app/calendar-settings-actions";
+import { createAvailabilityBlock, removeAvailabilityBlock } from "@/app/calendar-block-actions";
 
 type Student = { id: string; name: string };
 type CalendarEvent = { id: string; summary?: string; description?: string; htmlLink?: string; start?: { dateTime?: string; date?: string }; end?: { dateTime?: string; date?: string } };
 type ViewMode = "month" | "week" | "day";
 type Settings = { view: ViewMode; availability: { days: number[]; start: string; end: string }; duration: number };
+type AvailabilityBlock = { id: string; date: string; time: string; duration: number; kind: "break" | "unavailable" };
 
 const keyFor = (value: string | Date) => {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(value));
@@ -19,12 +21,15 @@ const timeFor = (value?: string) => value ? new Date(value).toLocaleTimeString("
 const minutes = (value: string) => { const [hour, minute] = value.split(":").map(Number); return hour * 60 + minute; };
 const clock = (value: number) => `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
 
-export function BookingCalendar({ students, events, settings }: { students: Student[]; events: CalendarEvent[]; settings: Settings }) {
+export function BookingCalendar({ students, events, settings, blocks, initialDate }: { students: Student[]; events: CalendarEvent[]; settings: Settings; blocks: AvailabilityBlock[]; initialDate?: string }) {
   const today = new Date();
   const [view, setView] = useState<ViewMode>(settings.view);
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-  const [selectedDate, setSelectedDate] = useState(keyFor(today));
+  const [selectedDate, setSelectedDate] = useState(initialDate || keyFor(today));
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingBlock, setPendingBlock] = useState<string | null>(null);
+  const holdTimer = useRef<number | null>(null);
+  const longPressed = useRef(false);
   const eventsByDate = useMemo(() => {
     const map: Record<string, CalendarEvent[]> = {};
     for (const event of events) { const value = event.start?.dateTime || event.start?.date; if (value) (map[keyFor(value)] ||= []).push(event); }
@@ -35,11 +40,12 @@ export function BookingCalendar({ students, events, settings }: { students: Stud
     const date = dateFor(key);
     if (!settings.availability.days.includes(date.getDay())) return [];
     const booked = eventsByDate[key] || [];
+    const dayBlocks = blocks.filter(block => block.date === key);
     const slots: string[] = [];
     for (let start = minutes(settings.availability.start); start + settings.duration <= minutes(settings.availability.end); start += settings.duration) {
       const slotStart = new Date(`${key}T${clock(start)}:00`);
       const slotEnd = new Date(slotStart.getTime() + settings.duration * 60000);
-      const conflict = booked.some(event => event.start?.dateTime && event.end?.dateTime && new Date(event.start.dateTime) < slotEnd && new Date(event.end.dateTime) > slotStart);
+      const conflict = booked.some(event => event.start?.dateTime && event.end?.dateTime && new Date(event.start.dateTime) < slotEnd && new Date(event.end.dateTime) > slotStart) || dayBlocks.some(block => minutes(block.time.slice(0, 5)) < start + settings.duration && minutes(block.time.slice(0, 5)) + block.duration > start);
       if (!conflict) slots.push(clock(start));
     }
     return slots;
@@ -51,6 +57,7 @@ export function BookingCalendar({ students, events, settings }: { students: Stud
   for (let day = 1; day <= last.getDate(); day++) cells.push(new Date(month.getFullYear(), month.getMonth(), day));
   while (cells.length % 7) cells.push(null);
   const selectedEvents = eventsByDate[selectedDate] || [];
+  const selectedBlocks = blocks.filter(block => block.date === selectedDate);
   const availableSlots = slotsFor(selectedDate);
   const selected = dateFor(selectedDate);
   const monday = new Date(selected); monday.setDate(selected.getDate() - ((selected.getDay() + 6) % 7));
@@ -81,12 +88,13 @@ export function BookingCalendar({ students, events, settings }: { students: Stud
 
     <div className="day-schedule">
       <section><h3>已預約</h3>{selectedEvents.length ? selectedEvents.map(event => { const studentId = event.description?.match(/student:([0-9a-f-]+)/)?.[1]; return <a className="schedule-row booked" key={event.id} href={studentId ? `/students/${studentId}` : event.htmlLink} target={studentId ? undefined : "_blank"}><time>{timeFor(event.start?.dateTime)}</time><strong>{event.summary || "未命名預約"}</strong><span>{event.end?.dateTime ? `${timeFor(event.end.dateTime)} 結束` : "全天"}</span></a>; }) : <p className="muted">這天目前沒有預約。</p>}</section>
-      <section><h3>可預約時段</h3>{availableSlots.length ? <div className="slot-list">{availableSlots.map(slot => <button type="button" onClick={() => { const input = document.querySelector<HTMLInputElement>('#appointment-form input[name="time"]'); if (input) input.value = slot; document.getElementById("appointment-form")?.scrollIntoView({ behavior: "smooth" }); }} key={slot}>{slot}<small>{settings.duration} 分鐘</small></button>)}</div> : <p className="muted">這天沒有可預約時段。</p>}</section>
+      <section><h3>可預約時段</h3><p className="slot-help">點一下新增預約，長按可設定休息或不可預約。</p>{availableSlots.length ? <div className="slot-list">{availableSlots.map(slot => <button type="button" onPointerDown={() => { longPressed.current = false; holdTimer.current = window.setTimeout(() => { longPressed.current = true; setPendingBlock(slot); }, 600); }} onPointerUp={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onPointerCancel={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onPointerLeave={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onClick={() => { if (longPressed.current) { longPressed.current = false; return; } const input = document.querySelector<HTMLInputElement>('#appointment-form input[name="time"]'); if (input) input.value = slot; document.getElementById("appointment-form")?.scrollIntoView({ behavior: "smooth" }); }} key={slot}>{slot}<small>{settings.duration} 分鐘・長按設定</small></button>)}</div> : <p className="muted">這天沒有可預約時段。</p>}{selectedBlocks.length > 0 && <div className="blocked-slots"><h4>休息／不可預約</h4>{selectedBlocks.map(block => <form action={removeAvailabilityBlock} key={block.id}><input type="hidden" name="id" value={block.id} /><input type="hidden" name="date" value={selectedDate} /><span><strong>{block.time.slice(0, 5)}</strong>　{block.kind === "break" ? "休息" : "不可預約"}</span><button type="submit">解除</button></form>)}</div>}</section>
     </div>
 
     <button className="calendar-settings-toggle" type="button" onClick={() => setSettingsOpen(open => !open)} aria-expanded={settingsOpen}>行事曆設定：預設{{ month: "月", week: "週", day: "日" }[settings.view]}檢視・每堂 {settings.duration} 分鐘</button>
     {settingsOpen && <form className="card calendar-settings" action={saveCalendarSettings}><h3>行事曆設定</h3><label>預設檢視<select name="view" defaultValue={settings.view}><option value="month">月</option><option value="week">週</option><option value="day">日</option></select></label><fieldset><legend>每週可授課日</legend>{["日", "一", "二", "三", "四", "五", "六"].map((label, day) => <label key={day}><input type="checkbox" name="days" value={day} defaultChecked={settings.availability.days.includes(day)} />{label}</label>)}</fieldset><div className="row"><label>開始時間<input type="time" name="start" defaultValue={settings.availability.start} /></label><label>結束時間<input type="time" name="end" defaultValue={settings.availability.end} /></label></div><label>每堂課長度（分鐘）<input type="number" name="duration" min="15" step="15" defaultValue={settings.duration} /></label><button>儲存行事曆設定</button></form>}
 
     <div className="card appointment-card" id="appointment-form"><h2>新增學生預約</h2>{students.length ? <form className="stack" action={createAppointment}><label>學生<select name="studentId" required defaultValue=""><option value="" disabled>選擇學生</option>{students.map(student => <option value={student.id} key={student.id}>{student.name}</option>)}</select></label><label>日期<input name="date" type="date" value={selectedDate} onChange={event => setSelectedDate(event.target.value)} required /></label><div className="row"><label>開始時間<input name="time" type="time" defaultValue={availableSlots[0] || "10:00"} required /></label><label>課程分鐘<input name="duration" type="number" min="15" step="15" defaultValue={settings.duration} required /></label></div><textarea name="notes" placeholder="預約備註（選填）" /><button>加入 Google Calendar</button></form> : <p className="muted">請先建立學生，再新增預約。</p>}</div>
+    {pendingBlock && <div className="block-dialog-backdrop" role="presentation" onClick={() => setPendingBlock(null)}><div className="block-dialog" role="dialog" aria-modal="true" aria-labelledby="block-dialog-title" onClick={event => event.stopPropagation()}><h3 id="block-dialog-title">設定 {pendingBlock} 時段</h3><p>這個時段要標記成什麼？</p><div className="block-actions"><form action={createAvailabilityBlock}><input type="hidden" name="date" value={selectedDate} /><input type="hidden" name="time" value={pendingBlock} /><input type="hidden" name="duration" value={settings.duration} /><input type="hidden" name="kind" value="break" /><button>休息</button></form><form action={createAvailabilityBlock}><input type="hidden" name="date" value={selectedDate} /><input type="hidden" name="time" value={pendingBlock} /><input type="hidden" name="duration" value={settings.duration} /><input type="hidden" name="kind" value="unavailable" /><button>不可預約</button></form></div><button className="button light" type="button" onClick={() => setPendingBlock(null)}>取消</button></div></div>}
   </section>;
 }

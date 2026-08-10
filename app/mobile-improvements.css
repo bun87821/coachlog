@@ -197,6 +197,18 @@ textarea {
 .slot-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 .slot-list button { min-height: 58px; border: 1px solid var(--brand); color: var(--brand); background: white; display: grid; gap: 2px; }
 .slot-list small { color: var(--muted); }
+.slot-help { margin-top: -6px; color: var(--muted); font-size: 12px; }
+.blocked-slots { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line); }
+.blocked-slots h4 { margin: 0 0 8px; }
+.blocked-slots form { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; }
+.blocked-slots button { padding: 8px 12px; color: #a33; background: white; border: 1px solid #d9baba; }
+
+.block-dialog-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: #17211b80; }
+.block-dialog { width: min(390px, 100%); padding: 22px; border-radius: 18px; background: white; box-shadow: 0 20px 70px #17211b55; }
+.block-dialog h3 { margin-top: 0; }
+.block-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0 10px; }
+.block-actions button { width: 100%; min-height: 48px; }
+.block-dialog > .button { width: 100%; }
 
 .calendar-settings-toggle {
   width: 100%;
