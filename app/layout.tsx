@@ -1,6 +1,7 @@
 import "./globals.css";
 import "./mobile-improvements.css";
 import type { Metadata, Viewport } from "next";
+import { FirstUseGuide } from "@/components/FirstUseGuide";
 
 export const metadata: Metadata = {
   title: "CoachLog 教練紀錄",
@@ -22,4 +23,4 @@ export const viewport: Viewport = {
   themeColor: "#17211b",
   viewportFit: "cover",
 };
-export default function RootLayout({ children }: Readonly<{children: React.ReactNode}>) { return <html lang="zh-Hant"><body>{children}</body></html>; }
+export default function RootLayout({ children }: Readonly<{children: React.ReactNode}>) { return <html lang="zh-Hant"><body>{children}<FirstUseGuide /></body></html>; }
