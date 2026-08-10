@@ -1,3 +1,20 @@
+.calendar-settings input,
+.calendar-settings select,
+.appointment-card input,
+.appointment-card select,
+.appointment-card textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.calendar-settings label,
+.appointment-card label,
+.appointment-card .row > * {
+  min-width: 0;
+}
+
 .calendar-settings {
   display: grid;
   gap: 24px;
@@ -163,6 +180,7 @@
 .period-card label {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .period-card label > span,
