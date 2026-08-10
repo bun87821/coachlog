@@ -321,7 +321,10 @@ textarea {
   }
 
   .compact-month { padding: 10px; }
-  .compact-day { min-height: 58px; padding: 5px 2px; }
+  .month-controls { margin-bottom: 4px; }
+  .month-controls button { padding: 7px 10px; }
+  .compact-day { min-height: 45px; padding: 3px 1px; gap: 1px; }
+  .compact-day strong { font-size: 13px; }
   .compact-day small { font-size: 9px; }
   .compact-day span { display: none; }
   .day-schedule { grid-template-columns: 1fr; }
