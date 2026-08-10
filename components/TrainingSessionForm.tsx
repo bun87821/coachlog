@@ -5,16 +5,25 @@ import { addSession } from "@/app/actions";
 
 type SetRow = { reps: string; weight: string; unit: "kg" | "lb" };
 type ExerciseRow = { name: string; sets: SetRow[] };
+type TemplateExercise = { name: string; sets: Array<{ reps: number | null; weight: number | null; unit: "kg" | "lb" }> };
 const newSet = (): SetRow => ({ reps: "10", weight: "", unit: "kg" });
 const newExercise = (): ExerciseRow => ({ name: "", sets: [newSet(), newSet(), newSet()] });
 
-export function TrainingSessionForm({ studentId, exerciseNames }: { studentId: string; exerciseNames: string[] }) {
+export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: { studentId: string; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] } }) {
   const [exercises, setExercises] = useState<ExerciseRow[]>([newExercise()]);
   const action = addSession.bind(null, studentId);
   const updateExercise = (exerciseIndex: number, patch: Partial<ExerciseRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, ...patch } : row));
   const updateSet = (exerciseIndex: number, setIndex: number, patch: Partial<SetRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, sets: row.sets.map((set, i) => i === setIndex ? { ...set, ...patch } : set) } : row));
+  const copyLastSession = () => {
+    if (!lastSession) return;
+    setExercises(lastSession.exercises.map(exercise => ({
+      name: exercise.name,
+      sets: exercise.sets.map(set => ({ reps: set.reps?.toString() || "", weight: set.weight?.toString() || "", unit: set.unit })),
+    })));
+  };
 
   return <form className="stack" action={action}>
+    {lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW")} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
     <label>上課時間<input name="date" type="datetime-local" required /></label>
     <textarea name="notes" placeholder="本次課程備註、學生狀態或下次調整方向" />
     <input type="hidden" name="exercisesJson" value={JSON.stringify(exercises)} />
