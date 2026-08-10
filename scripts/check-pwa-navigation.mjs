@@ -6,7 +6,7 @@ const layout = fs.readFileSync(new URL("../app/layout.tsx", import.meta.url), "u
 const studentList = fs.readFileSync(new URL("../components/StudentList.tsx", import.meta.url), "utf8");
 
 const checks = [
-  [manifest.includes('start_url: "/dashboard"'), "manifest 必須從 /dashboard 啟動"],
+  [manifest.includes('start_url: "/local"'), "manifest 必須從本機模式啟動"],
   [manifest.includes('scope: "/"'), "manifest scope 必須涵蓋學生頁"],
   [manifest.includes('display: "standalone"'), "manifest 必須使用 standalone 顯示"],
   [layout.includes("appleWebApp"), "layout 必須宣告 iPhone 主畫面模式"],
