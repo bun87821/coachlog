@@ -1,0 +1,60 @@
+.copy-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trend-hint {
+  background: #f3f7df;
+  color: #536019;
+  padding: 9px 11px;
+  border-radius: 9px;
+  font-size: 13px;
+}
+
+.mobile-quick-add {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .grid > .body-chart {
+    grid-column: auto !important;
+  }
+
+  .student-heading {
+    align-items: flex-end;
+  }
+
+  .mobile-quick-add {
+    display: inline-flex;
+    white-space: nowrap;
+  }
+
+  .chart-empty {
+    height: 120px;
+  }
+
+  .set-row {
+    grid-template-columns: 28px 1fr 1fr 65px 44px;
+  }
+
+  .remove-set {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .danger-link {
+    min-height: 44px;
+  }
+
+  .session-submit {
+    position: sticky;
+    bottom: 12px;
+    z-index: 5;
+    min-height: 48px;
+    box-shadow: 0 8px 22px #17211b38;
+  }
+}

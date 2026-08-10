@@ -11,6 +11,7 @@ const newExercise = (): ExerciseRow => ({ name: "", sets: [newSet(), newSet(), n
 
 export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: { studentId: string; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] } }) {
   const [exercises, setExercises] = useState<ExerciseRow[]>([newExercise()]);
+  const [copied, setCopied] = useState(false);
   const action = addSession.bind(null, studentId);
   const updateExercise = (exerciseIndex: number, patch: Partial<ExerciseRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, ...patch } : row));
   const updateSet = (exerciseIndex: number, setIndex: number, patch: Partial<SetRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, sets: row.sets.map((set, i) => i === setIndex ? { ...set, ...patch } : set) } : row));
@@ -20,10 +21,12 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
       name: exercise.name,
       sets: exercise.sets.map(set => ({ reps: set.reps?.toString() || "", weight: set.weight?.toString() || "", unit: set.unit })),
     })));
+    setCopied(true);
   };
 
   return <form className="stack" action={action}>
     {lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW", { timeZone: "UTC" })} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
+    <p className="copy-status" aria-live="polite">{copied ? "已複製上次菜單，可以直接調整本次重量與次數。" : ""}</p>
     <label>上課時間<input name="date" type="datetime-local" required /></label>
     <textarea name="notes" placeholder="本次課程備註、學生狀態或下次調整方向" />
     <input type="hidden" name="exercisesJson" value={JSON.stringify(exercises)} />
@@ -48,6 +51,6 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
       </div>)}
     </div>
     <button className="button light" type="button" onClick={() => setExercises(rows => [...rows, newExercise()])}>＋ 新增另一個動作</button>
-    <button>儲存本次訓練</button>
+    <button className="session-submit">儲存本次訓練</button>
   </form>;
 }

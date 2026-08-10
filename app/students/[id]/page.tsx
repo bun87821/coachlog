@@ -33,10 +33,10 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
   return <main className="shell">
     <Header name={user.name} />
     <a className="muted" href="/dashboard">← 返回學生列表</a>
-    <div className="section-title"><div><div className="eyebrow">學生紀錄</div><h1>{currentStudent.name}</h1><div className="muted">{currentStudent.email} {currentStudent.phone}</div></div></div>
+    <div className="section-title student-heading"><div><div className="eyebrow">學生紀錄</div><h1>{currentStudent.name}</h1><div className="muted">{currentStudent.email} {currentStudent.phone}</div></div><a className="button mobile-quick-add" href="#new-workout">＋ 新增訓練</a></div>
     <section className="progress-section"><div className="section-title"><div><div className="eyebrow">進步趨勢</div><h2>數據曲線</h2></div></div><ProgressCharts metrics={metrics.rows} loads={loads.rows} /></section>
     <div className="record-layout">
-      <div className="card"><div className="form-heading"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><TrainingSessionForm studentId={id} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div>
+      <div className="card" id="new-workout"><div className="form-heading"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><TrainingSessionForm studentId={id} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div>
       <div className="card"><h2>新增身體數據</h2><form className="stack" action={metricAction}><label>測量日期<input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required /></label><div className="row"><label>體重 kg<input name="weight" type="number" step="0.1" /></label><label>體脂 %<input name="bodyFat" type="number" step="0.1" /></label></div><label>肌肉量 kg<input name="muscle" type="number" step="0.1" /></label><button>儲存身體數據</button></form></div>
     </div>
     <section className="history-section"><div className="section-title"><div><div className="eyebrow">課程歷史</div><h2>過去訓練紀錄</h2></div><span className="muted">共 {sessions.length} 堂</span></div>
