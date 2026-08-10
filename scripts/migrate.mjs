@@ -3,6 +3,9 @@ if (!process.env.DATABASE_URL) { console.log("DATABASE_URL not set; skipping mig
 const db = new pg.Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined });
 const sql = `
 CREATE TABLE IF NOT EXISTS coaches (id text PRIMARY KEY, email text UNIQUE NOT NULL, name text, image text, google_access_token text, google_refresh_token text, token_expires_at bigint, created_at timestamptz DEFAULT now());
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS calendar_view text NOT NULL DEFAULT 'month';
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS availability jsonb NOT NULL DEFAULT '{"days":[1,2,3,4,5],"start":"07:00","end":"21:00"}'::jsonb;
+ALTER TABLE coaches ADD COLUMN IF NOT EXISTS default_duration integer NOT NULL DEFAULT 60;
 CREATE TABLE IF NOT EXISTS students (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), coach_id text NOT NULL REFERENCES coaches(id) ON DELETE CASCADE, name text NOT NULL, email text, phone text, notes text, created_at timestamptz DEFAULT now());
 CREATE INDEX IF NOT EXISTS students_coach_idx ON students(coach_id);
 CREATE TABLE IF NOT EXISTS body_metrics (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), student_id uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE, measured_at date NOT NULL DEFAULT CURRENT_DATE, weight numeric, body_fat numeric, muscle_mass numeric, created_at timestamptz DEFAULT now());

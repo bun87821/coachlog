@@ -8,14 +8,14 @@ import { StudentList } from "@/components/StudentList";
 
 export default async function Dashboard() {
   const user = await requireCoach();
-  const [students, events] = await Promise.all([
+  const [students, events, calendarSettings] = await Promise.all([
     db.query(`SELECT s.*, (SELECT weight FROM body_metrics WHERE student_id=s.id ORDER BY measured_at DESC LIMIT 1) weight FROM students s WHERE coach_id=$1 ORDER BY created_at DESC`, [user.id]),
     listCalendarEvents(user.id),
+    db.query(`SELECT calendar_view,availability,default_duration FROM coaches WHERE id=$1`, [user.id]),
   ]);
   return <main className="shell">
     <Header name={user.name} />
-    <div className="section-title" id="calendar"><div><div className="eyebrow">預約管理</div><h1>訓練行事曆</h1></div></div>
-    <BookingCalendar students={students.rows.map(student => ({ id: student.id, name: student.name }))} events={events} />
+    <div id="calendar"><BookingCalendar students={students.rows.map(student => ({ id: student.id, name: student.name }))} events={events} settings={{ view: calendarSettings.rows[0]?.calendar_view || "month", availability: calendarSettings.rows[0]?.availability || { days: [1,2,3,4,5], start: "07:00", end: "21:00" }, duration: Number(calendarSettings.rows[0]?.default_duration || 60) }} /></div>
     <div className="dashboard student-section">
       <section>
         <div className="section-title"><div><div className="eyebrow">學生管理</div><h1>你的學生</h1></div></div>
