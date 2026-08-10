@@ -41,6 +41,7 @@
 .student-order-button { width: 42px; height: 42px; padding: 0; background: var(--paper); color: var(--brand); border: 1px solid var(--line); font-size: 18px; }
 .student-order-button:hover:not(:disabled) { border-color: var(--brand); background: #e7f2eb; }
 .student-order-button:disabled { opacity: .3; cursor: not-allowed; }
+.student-drag-handle{width:42px;height:42px;padding:0;background:#e7f2eb;color:var(--brand);border:1px solid #bcd6c5;font-size:20px;touch-action:none;cursor:grab}.student-sorting{user-select:none;overflow:hidden}.student-sorting .student{transition:transform .12s ease}.student-sorting .student-drag-handle{cursor:grabbing;background:var(--brand);color:white}
 
 .session-editor {
   grid-column: 1 / -1;
