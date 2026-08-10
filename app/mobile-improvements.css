@@ -25,6 +25,48 @@
   flex: 1;
 }
 
+.student-search {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.session-editor {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+}
+
+.session-editor summary {
+  width: max-content;
+  cursor: pointer;
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.session-edit-form {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.card,
+.calendar-sidebar,
+.calendar-sidebar > *,
+.record-layout > *,
+.row > *,
+.stack > * {
+  min-width: 0;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .student-quick-nav {
   position: fixed;
   top: 50%;
@@ -111,6 +153,15 @@
 
   .exercise-name-fields {
     grid-template-columns: 1fr;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .session-edit-form {
+    padding: 12px;
   }
 
   .mobile-quick-add {

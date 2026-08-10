@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { addSession } from "@/app/actions";
+import { updateSession } from "@/app/session-actions";
 
 type SetRow = { reps: string; weight: string; unit: "kg" | "lb" };
 type ExerciseRow = { name: string; sets: SetRow[] };
@@ -9,10 +10,13 @@ type TemplateExercise = { name: string; sets: Array<{ reps: number | null; weigh
 const newSet = (): SetRow => ({ reps: "10", weight: "", unit: "kg" });
 const newExercise = (): ExerciseRow => ({ name: "", sets: [newSet(), newSet(), newSet()] });
 
-export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: { studentId: string; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] } }) {
-  const [exercises, setExercises] = useState<ExerciseRow[]>([newExercise()]);
+type EditableSession = { id: string; occurredAt: string; notes: string | null; exercises: TemplateExercise[] };
+
+export function TrainingSessionForm({ studentId, exerciseNames, lastSession, session }: { studentId: string; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] }; session?: EditableSession }) {
+  const [exercises, setExercises] = useState<ExerciseRow[]>(session ? session.exercises.map(exercise => ({ name: exercise.name, sets: exercise.sets.map(set => ({ reps: set.reps?.toString() || "", weight: set.weight?.toString() || "", unit: set.unit })) })) : [newExercise()]);
   const [copied, setCopied] = useState(false);
-  const action = addSession.bind(null, studentId);
+  const action = session ? updateSession.bind(null, studentId, session.id) : addSession.bind(null, studentId);
+  const exerciseListId = `exercise-list-${session?.id || "new"}`;
   const updateExercise = (exerciseIndex: number, patch: Partial<ExerciseRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, ...patch } : row));
   const updateSet = (exerciseIndex: number, setIndex: number, patch: Partial<SetRow>) => setExercises(rows => rows.map((row, index) => index === exerciseIndex ? { ...row, sets: row.sets.map((set, i) => i === setIndex ? { ...set, ...patch } : set) } : row));
   const copyLastSession = () => {
@@ -24,19 +28,19 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
     setCopied(true);
   };
 
-  return <form className="stack" action={action}>
-    {lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW", { timeZone: "UTC" })} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
+  return <form className={`stack ${session ? "session-edit-form" : ""}`} action={action}>
+    {!session && lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW", { timeZone: "UTC" })} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
     <p className="copy-status" aria-live="polite">{copied ? "已複製上次菜單，可以直接調整本次重量與次數。" : ""}</p>
-    <label>上課時間<input name="date" type="datetime-local" required /></label>
-    <textarea name="notes" placeholder="本次課程備註、學生狀態或下次調整方向" />
+    <label>上課時間<input name="date" type="datetime-local" defaultValue={session ? session.occurredAt.slice(0, 16) : undefined} required /></label>
+    <textarea name="notes" defaultValue={session?.notes || ""} placeholder="本次課程備註、學生狀態或下次調整方向" />
     <input type="hidden" name="exercisesJson" value={JSON.stringify(exercises)} />
-    <datalist id="exercise-list">{exerciseNames.map(name => <option key={name} value={name} />)}</datalist>
+    <datalist id={exerciseListId}>{exerciseNames.map(name => <option key={name} value={name} />)}</datalist>
     <div className="exercise-editor">
       {exercises.map((exercise, exerciseIndex) => <div className="exercise-block" key={exerciseIndex}>
         <div className="exercise-title-row">
           <div className="exercise-name-fields">
             <label>動作 {exerciseIndex + 1}<select aria-label={`選擇動作 ${exerciseIndex + 1}`} value={exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })}><option value="">選擇既有動作</option>{exerciseNames.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-            <label className="custom-exercise-label">或輸入新動作名稱<input list="exercise-list" value={exercise.name} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })} placeholder="例如：槓鈴深蹲" required /></label>
+            <label className="custom-exercise-label">或輸入新動作名稱<input list={exerciseListId} value={exercise.name} onChange={event => updateExercise(exerciseIndex, { name: event.target.value })} placeholder="例如：槓鈴深蹲" required /></label>
           </div>
           {exercises.length > 1 && <button className="danger-link" type="button" onClick={() => setExercises(rows => rows.filter((_, index) => index !== exerciseIndex))}>移除動作</button>}
         </div>
@@ -54,6 +58,6 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession }: {
       </div>)}
     </div>
     <button className="button light" type="button" onClick={() => setExercises(rows => [...rows, newExercise()])}>＋ 新增另一個動作</button>
-    <button className="session-submit">儲存本次訓練</button>
+    <button className="session-submit">{session ? "儲存課堂修改" : "儲存本次訓練"}</button>
   </form>;
 }
