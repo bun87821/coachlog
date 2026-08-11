@@ -6,10 +6,10 @@ import "./FirstUseGuide.css";
 const STORAGE_KEY = "coachlog-onboarding-v1";
 const steps = [
   { icon: "👋", title: "歡迎使用 CoachLog", text: "把學生、每堂訓練、身體數據與預約集中在同一個地方。接下來用一分鐘認識主要功能。" },
-  { icon: "📱", title: "先選擇資料放哪裡", text: "本機模式不用登入，資料只留在這台裝置；Google 雲端版可以跨裝置使用，並連動 Google Calendar。" },
+  { icon: "📱", title: "先選擇資料放哪裡", text: "本機模式不用登入，也能使用學生紀錄與本機日曆；登入 Google 帳號後，則能跨裝置並同步 Google Calendar。" },
   { icon: "👤", title: "建立你的學生", text: "新增學生後，可以搜尋姓名，也能按住 ☰ 拖曳，按照常用預約時段調整學生順序。" },
   { icon: "🏋️", title: "記錄每一次訓練", text: "輸入動作、組數、重量與單位；可以複製上次菜單、使用休息計時器，並查看重量與身體數據曲線。" },
-  { icon: "🗓️", title: "預約與資料備份", text: "建立學生預約；雲端版可以寫入 Google Calendar。學生頁最底部可匯出 CSV，定期備份訓練紀錄。" },
+  { icon: "🗓️", title: "預約與資料備份", text: "不登入也能在本機日曆建立學生預約；登入後可再同步至 Google Calendar。學生頁最底部可匯出 CSV 備份訓練紀錄。" },
 ];
 
 export function FirstUseGuide() {
