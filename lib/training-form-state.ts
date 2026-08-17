@@ -51,6 +51,14 @@ export function copyFirstSetWeight(exercise: TrainingExerciseRow): TrainingExerc
   };
 }
 
+export function canCopyFirstSetWeight(exercise: TrainingExerciseRow) {
+  return exercise.sets.length > 1 && Boolean(exercise.sets[0]?.weight);
+}
+
+export function trainingInputMode(kind: "reps" | "decimal") {
+  return kind === "reps" ? "numeric" as const : "decimal" as const;
+}
+
 export async function finalizeTrainingDraft<T>(
   storage: DraftStorage,
   key: string,

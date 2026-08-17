@@ -1,10 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  canCopyFirstSetWeight,
   copyFirstSetWeight,
   finalizeTrainingDraft,
   readTrainingDraft,
   trainingDraftKey,
+  trainingInputMode,
   writeTrainingDraft,
   type TrainingDraft,
 } from "../lib/training-form-state.ts";
@@ -64,6 +66,17 @@ test("第 1 組沒有重量時不覆蓋其他組", () => {
     ],
   };
   assert.equal(copyFirstSetWeight(exercise), exercise);
+  assert.equal(canCopyFirstSetWeight(exercise), false);
+});
+
+test("只有多組且第 1 組有重量時才能同步", () => {
+  assert.equal(canCopyFirstSetWeight(sampleDraft.exercises[0]), true);
+  assert.equal(canCopyFirstSetWeight({ name: "深蹲", sets: [{ reps: "8", weight: "60", unit: "kg" }] }), false);
+});
+
+test("次數使用整數鍵盤，重量與身體數值使用小數鍵盤", () => {
+  assert.equal(trainingInputMode("reps"), "numeric");
+  assert.equal(trainingInputMode("decimal"), "decimal");
 });
 
 test("正式儲存成功後才清除草稿", async () => {
