@@ -89,7 +89,7 @@ export function LocalStudentPage({ data, studentId, update, back }: { data: Loca
         <div className="form-heading"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div>
         <RestTimer />
         {student.sessions[0] && <button className="copy-workout" type="button" onClick={() => setExercises(structuredClone(student.sessions[0].exercises))}><span>⧉</span><span><strong>複製上次菜單</strong><small>複製後可自由調整重量與次數</small></span></button>}
-        <p className="copy-status" aria-live="polite">{draftRestored ? "已恢復尚未儲存的訓練草稿。" : saveMessage}</p>
+        <p className="copy-status" aria-live="polite">{saveMessage || (draftRestored ? "已恢復尚未儲存的訓練草稿。" : "")}</p>
         <form className="stack" onSubmit={saveSession}>
           <label>上課時間<input name="date" type="datetime-local" value={date} onChange={event => setDate(event.target.value)} required /></label>
           <textarea name="notes" value={notes} onChange={event => setNotes(event.target.value)} placeholder="本次課程備註、學生狀態或下次調整方向" />

@@ -91,7 +91,7 @@ export function TrainingSessionForm({ studentId, exerciseNames, lastSession, ses
 
   return <form className={`stack ${session ? "session-edit-form" : ""}`} action={session ? editAction : saveNewSession}>
     {!session && lastSession && <button className="copy-workout" type="button" onClick={copyLastSession}><span>⧉</span><span><strong>複製上次菜單</strong><small>{new Date(lastSession.occurredAt).toLocaleDateString("zh-TW", { timeZone: "UTC" })} 的 {lastSession.exercises.length} 個動作，複製後可自由編輯</small></span></button>}
-    <p className="copy-status" aria-live="polite">{draftRestored ? "已恢復尚未儲存的訓練草稿。" : copied ? "已複製上次菜單，可以直接調整本次重量與次數。" : saveMessage}</p>
+    <p className="copy-status" aria-live="polite">{saveMessage || (draftRestored ? "已恢復尚未儲存的訓練草稿。" : copied ? "已複製上次菜單，可以直接調整本次重量與次數。" : "")}</p>
     <label>上課時間<input name="date" type="datetime-local" value={date} onChange={event => setDate(event.target.value)} required /></label>
     <textarea name="notes" value={notes} onChange={event => setNotes(event.target.value)} placeholder="本次課程備註、學生狀態或下次調整方向" />
     <input type="hidden" name="exercisesJson" value={JSON.stringify(exercises)} />
