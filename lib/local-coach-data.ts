@@ -1,7 +1,7 @@
 export type LocalSet={reps:string;weight:string;unit:"kg"|"lb"};
 export type LocalExercise={name:string;sets:LocalSet[]};
 export type LocalSession={id:string;date:string;notes:string;exercises:LocalExercise[]};
-export type LocalMetric={id:string;date:string;weight:string;bodyFat:string;muscle:string};
+export type LocalMetric={id:string;date:string;weight:string;bodyFat:string;muscle:string;fatMass?:string};
 export type LocalStudent={id:string;name:string;email:string;phone:string;notes:string;metrics:LocalMetric[];sessions:LocalSession[]};
 export type LocalBooking={id:string;studentId:string;date:string;time:string;duration:number;notes:string};
 export type LocalPeriod={start:string;end:string};
