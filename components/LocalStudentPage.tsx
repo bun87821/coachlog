@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ProgressCharts } from "@/components/ProgressCharts";
 import { RestTimer } from "@/components/RestTimer";
+import { StudentSectionNav } from "@/components/StudentSectionNav";
 import { uid, type LocalCoachData, type LocalStudent } from "@/lib/local-coach-data";
 import {
   canCopyFirstSetWeight,
@@ -122,13 +123,14 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
 
   return <main className="shell local-app">
     <nav className="topbar"><button className="brand local-brand-button" onClick={back}>Coach<span>Log</span></button><span className="local-badge">本機模式</span></nav>
-    <aside className="student-quick-nav" aria-label="學生頁快速導覽"><strong>快速前往</strong><nav><a href="#student-overview">學生資料</a><a href="#progress">進步趨勢</a><a href="#new-workout">新增訓練</a><a href="#body-metrics">身體數據</a><a href="#history">歷史紀錄</a><button type="button" onClick={back}>學生預約</button></nav></aside>
+    <StudentSectionNav trailing={<button type="button" onClick={back}>學生預約</button>} />
     <button className="muted local-back-link" onClick={back}>← 返回學生列表</button>
     <div className="section-title student-heading" id="student-overview"><div><div className="eyebrow">學生紀錄</div><h1>{student.name}</h1><div className="muted">{student.email} {student.phone}</div></div><a className="button mobile-quick-add" href="#new-workout">＋ 新增訓練</a></div>
     <section className="progress-section" id="progress"><div className="section-title"><div><div className="eyebrow">進步趨勢</div><h2>數據曲線</h2></div></div><ProgressCharts metrics={student.metrics.map(metric => ({ date: metric.date, weight: Number(metric.weight) || null, bodyFat: Number(metric.bodyFat) || null, muscle: Number(metric.muscle) || null, fatMass: Number(metric.fatMass) || null }))} loads={loads} /></section>
     <div className="record-layout">
-      <div className="card" id="new-workout">
-        <div className="form-heading"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div>
+      <section className="record-section" id="new-workout">
+        <div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div>
+        <div className="card">
         <RestTimer />
         {!isGroup && student.sessions[0] && <button className="copy-workout" type="button" onClick={() => setExercises(student.sessions[0].exercises.map(exercise => ({ name: exercise.name, setsByStudent: { [student.id]: structuredClone(exercise.sets) } })))}><span>⧉</span><span><strong>複製上次菜單</strong><small>複製後可自由調整重量與次數</small></span></button>}
         <p className="copy-status" aria-live="polite">{saveMessage || (draftRestored ? "已恢復尚未儲存的訓練草稿。" : "")}</p>
@@ -172,8 +174,9 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
           {isGroup && <p className="save-summary">{payload.length ? `將建立 ${payload.length} 筆紀錄：${payload.map(entry => `${participants.find(participant => participant.id === entry.studentId)?.name} ${entry.exercises.length} 動作`).join("、")}` : "還沒有任何學生填寫紀錄。"}</p>}
           <button className="session-submit" disabled={!payload.length}>{isGroup ? `儲存 ${participants.length} 人紀錄` : "儲存本次訓練"}</button>
         </form>
-      </div>
-      <div className="card" id="body-metrics"><h2>新增身體數據</h2><form className="stack" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); replace({ ...student, metrics: [...student.metrics, { id: uid(), date: String(form.get("date")), weight: String(form.get("weight") || ""), bodyFat: String(form.get("bodyFat") || ""), muscle: String(form.get("muscle") || ""), fatMass: String(form.get("fatMass") || "") }] }); }}><label>測量日期<input name="date" type="date" defaultValue={today()} required /></label><div className="row"><label>體重 kg<input name="weight" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label><label>體脂 %<input name="bodyFat" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label></div><div className="row"><label>肌肉量 kg<input name="muscle" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label><label>脂肪重量 kg<input name="fatMass" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label></div><button>儲存身體數據</button></form></div>
+        </div>
+      </section>
+      <section className="record-section" id="body-metrics"><div className="section-title"><div><div className="eyebrow">身體數據</div><h2>新增身體數據</h2></div></div><div className="card"><form className="stack" onSubmit={event => { event.preventDefault(); const form = new FormData(event.currentTarget); replace({ ...student, metrics: [...student.metrics, { id: uid(), date: String(form.get("date")), weight: String(form.get("weight") || ""), bodyFat: String(form.get("bodyFat") || ""), muscle: String(form.get("muscle") || ""), fatMass: String(form.get("fatMass") || "") }] }); }}><label>測量日期<input name="date" type="date" defaultValue={today()} required /></label><div className="row"><label>體重 kg<input name="weight" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label><label>體脂 %<input name="bodyFat" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label></div><div className="row"><label>肌肉量 kg<input name="muscle" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label><label>脂肪重量 kg<input name="fatMass" type="number" inputMode={trainingInputMode("decimal")} min="0" step=".1" /></label></div><button>儲存身體數據</button></form></div></section>
     </div>
     <section className="history-section" id="history"><div className="section-title"><div><div className="eyebrow">課程歷史</div><h2>過去訓練紀錄</h2></div><span className="muted">共 {student.sessions.length} 堂</span></div>{student.sessions.length ? <div className="session-history">{student.sessions.map((session, index) => <article className="card session-card" key={session.id}><div className="session-date"><div>{index === 0 && <span className="latest-badge">最新紀錄</span>}<strong>{new Date(session.date).toLocaleDateString("zh-TW", { year: "numeric", month: "long", day: "numeric" })}</strong></div><time>{new Date(session.date).toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })} · {session.exercises.length} 個動作 · {session.exercises.reduce((total, exercise) => total + exercise.sets.length, 0)} 組</time>{session.groupId && partnersByGroup[session.groupId]?.length ? <span className="partner-badge">與 {partnersByGroup[session.groupId].join("、")} 一起上課</span> : null}</div>{session.notes && <p className="session-note">{session.notes}</p>}<div className="history-exercises">{session.exercises.map(exercise => <div className="history-exercise" key={exercise.name}><h3>{exercise.name}</h3><div className="history-sets">{exercise.sets.map((set, setIndex) => <span key={setIndex}>第 {setIndex + 1} 組　<strong>{set.weight || "—"} {set.unit}</strong> × {set.reps || "—"}</span>)}</div></div>)}</div></article>)}</div> : <div className="card empty">尚無訓練紀錄，完成上方表單後會顯示在這裡。</div>}</section>
     <section className="card csv-tools"><div><div className="eyebrow">資料備份</div><h2>本機資料備份</h2><p>本機資料只存在這台裝置，建議定期備份。</p></div><button onClick={() => { const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), url = URL.createObjectURL(blob), link = document.createElement("a"); link.href = url; link.download = `coachlog-backup-${today()}.json`; link.click(); URL.revokeObjectURL(url); }}>匯出本機備份</button></section>
