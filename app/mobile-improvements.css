@@ -352,6 +352,16 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* 兩欄的欄位高度不同時（例如時間與數字），標籤與輸入框仍要對齊等高。
+     只作用在欄位上，按鈕列與頂端列維持原本的底部對齊。 */
+  .row > label {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 6px;
+    min-width: 0;
+    align-self: stretch;
+  }
+
   .session-edit-form {
     padding: 12px;
   }
