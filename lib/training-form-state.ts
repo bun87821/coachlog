@@ -68,3 +68,102 @@ export async function finalizeTrainingDraft<T>(
   storage.removeItem(key);
   return result;
 }
+
+export type TrainingParticipant = {
+  id: string;
+  name: string;
+};
+
+export type GroupExerciseRow = {
+  name: string;
+  setsByStudent: Record<string, TrainingSetRow[]>;
+};
+
+export type GroupTrainingDraft = {
+  date: string;
+  notesByStudent: Record<string, string>;
+  exercises: GroupExerciseRow[];
+};
+
+export type TrainingSessionPayload = {
+  studentId: string;
+  notes: string;
+  exercises: TrainingExerciseRow[];
+};
+
+export function trainingDraftKeyFor(scope: "cloud" | "local", studentIds: string[]) {
+  const sorted = [...studentIds].sort();
+  if (sorted.length <= 1) return trainingDraftKey(scope, sorted[0] || "");
+  return `coachlog-training-draft-v1:${scope}:group:${sorted.join("+")}`;
+}
+
+export function exerciseParticipants(exercise: GroupExerciseRow) {
+  return Object.keys(exercise.setsByStudent);
+}
+
+export function isExerciseParticipant(exercise: GroupExerciseRow, studentId: string) {
+  return Boolean(exercise.setsByStudent[studentId]);
+}
+
+export function toggleExerciseParticipant(exercise: GroupExerciseRow, studentId: string, startingSets: TrainingSetRow[]): GroupExerciseRow {
+  const next = { ...exercise.setsByStudent };
+  if (next[studentId]) delete next[studentId];
+  else next[studentId] = startingSets;
+  return { ...exercise, setsByStudent: next };
+}
+
+export function studentExercises(exercises: GroupExerciseRow[], studentId: string): TrainingExerciseRow[] {
+  return exercises
+    .filter(exercise => (exercise.setsByStudent[studentId] || []).length > 0)
+    .map(exercise => ({ name: exercise.name, sets: exercise.setsByStudent[studentId] }));
+}
+
+export function trainingSessionPayload(
+  participants: TrainingParticipant[],
+  exercises: GroupExerciseRow[],
+  notesByStudent: Record<string, string>,
+): TrainingSessionPayload[] {
+  return participants
+    .map(participant => ({
+      studentId: participant.id,
+      notes: notesByStudent[participant.id] || "",
+      exercises: studentExercises(exercises, participant.id),
+    }))
+    .filter(entry => entry.exercises.length > 0);
+}
+
+export function normalizeTrainingDraft(raw: unknown, participantIds: string[]): GroupTrainingDraft | null {
+  if (!raw || typeof raw !== "object") return null;
+  const draft = raw as Partial<GroupTrainingDraft> & Partial<TrainingDraft>;
+  if (!Array.isArray(draft.exercises)) return null;
+  const allowed = new Set(participantIds);
+  const soleParticipant = participantIds.length === 1 ? participantIds[0] : null;
+
+  const exercises = draft.exercises.map(exercise => {
+    const legacySets = (exercise as unknown as TrainingExerciseRow).sets;
+    if (Array.isArray(legacySets)) {
+      return { name: exercise.name || "", setsByStudent: soleParticipant ? { [soleParticipant]: legacySets } : {} };
+    }
+    const stored = (exercise as GroupExerciseRow).setsByStudent;
+    const setsByStudent: Record<string, TrainingSetRow[]> = {};
+    for (const [studentId, sets] of Object.entries(stored || {})) {
+      if (allowed.has(studentId) && Array.isArray(sets)) setsByStudent[studentId] = sets;
+    }
+    return { name: exercise.name || "", setsByStudent };
+  }).filter(exercise => Object.keys(exercise.setsByStudent).length > 0);
+
+  if (!exercises.length) return null;
+
+  const legacyNotes = (draft as TrainingDraft).notes;
+  const notesByStudent: Record<string, string> = {};
+  if (typeof legacyNotes === "string" && soleParticipant) notesByStudent[soleParticipant] = legacyNotes;
+  for (const [studentId, note] of Object.entries((draft as GroupTrainingDraft).notesByStudent || {})) {
+    if (allowed.has(studentId) && typeof note === "string") notesByStudent[studentId] = note;
+  }
+
+  return { date: typeof draft.date === "string" ? draft.date : "", notesByStudent, exercises };
+}
+
+export function writeGroupTrainingDraft(storage: DraftStorage, key: string, draft: GroupTrainingDraft) {
+  storage.setItem(key, JSON.stringify(draft));
+}

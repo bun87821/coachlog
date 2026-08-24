@@ -20,6 +20,8 @@ ALTER TABLE body_metrics ADD COLUMN IF NOT EXISTS fat_mass numeric;
 CREATE TABLE IF NOT EXISTS exercises (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), coach_id text NOT NULL REFERENCES coaches(id) ON DELETE CASCADE, name text NOT NULL, UNIQUE(coach_id,name));
 CREATE TABLE IF NOT EXISTS sessions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), student_id uuid NOT NULL REFERENCES students(id) ON DELETE CASCADE, occurred_at timestamptz NOT NULL DEFAULT now(), notes text, calendar_event_id text, created_at timestamptz DEFAULT now());
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS import_key text;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS group_id uuid;
+CREATE INDEX IF NOT EXISTS sessions_group_idx ON sessions(group_id) WHERE group_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS sessions_student_import_key_idx ON sessions(student_id,import_key) WHERE import_key IS NOT NULL;
 CREATE TABLE IF NOT EXISTS exercise_sets (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), session_id uuid NOT NULL REFERENCES sessions(id) ON DELETE CASCADE, exercise_id uuid NOT NULL REFERENCES exercises(id), set_number integer NOT NULL, reps integer, weight numeric, unit text NOT NULL DEFAULT 'kg' CHECK(unit IN ('kg','lb')));
 CREATE TABLE IF NOT EXISTS availability_blocks (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), coach_id text NOT NULL REFERENCES coaches(id) ON DELETE CASCADE, blocked_date date NOT NULL, start_time time NOT NULL, duration integer NOT NULL DEFAULT 60, kind text NOT NULL CHECK(kind IN ('break','unavailable')), created_at timestamptz DEFAULT now(), UNIQUE(coach_id,blocked_date,start_time));
