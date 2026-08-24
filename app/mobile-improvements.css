@@ -501,3 +501,35 @@ textarea {
     scroll-margin-top: 118px;
   }
 }
+
+/* 本機日曆：點預約列直接開該學生的訓練表單，時間一併帶入 */
+article.schedule-row {
+  grid-template-columns: 1fr auto;
+}
+
+.schedule-row .booking-open {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-weight: inherit;
+}
+
+.schedule-row .booking-open:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+@media (max-width: 800px) {
+  .schedule-row .booking-open {
+    grid-template-columns: 58px 1fr;
+  }
+
+  .schedule-row .booking-open span {
+    grid-column: 2;
+  }
+}

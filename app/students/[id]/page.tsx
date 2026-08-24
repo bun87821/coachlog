@@ -11,10 +11,11 @@ import { SessionParticipants } from "@/components/SessionParticipants";
 import { StudentSectionNav } from "@/components/StudentSectionNav";
 import { trainingInputMode } from "@/lib/training-form-state";
 
-export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ csvImported?: string; csvSkipped?: string; csvError?: string; with?: string }> }) {
+export default async function StudentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ csvImported?: string; csvSkipped?: string; csvError?: string; with?: string; at?: string }> }) {
   const { id } = await params;
   const csvResult = await searchParams;
   const user = await requireCoach();
+  const bookedAt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(csvResult.at || "") ? csvResult.at : undefined;
   const requestedPartners = (csvResult.with || "").split(",").map(value => value.trim()).filter(Boolean).filter(value => value !== id);
   const [student, metrics, exercises, loads, sessionRows, coachStudents, groupPartners] = await Promise.all([
     db.query(`SELECT * FROM students WHERE id=$1 AND coach_id=$2`, [id, user.id]),
@@ -53,7 +54,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
     <div className="section-title student-heading" id="student-overview"><div><div className="eyebrow">學生紀錄</div><h1>{currentStudent.name}</h1><div className="muted">{currentStudent.email} {currentStudent.phone}</div></div><a className="button mobile-quick-add" href="#new-workout">＋ 新增訓練</a></div>
     <section className="progress-section" id="progress"><div className="section-title"><div><div className="eyebrow">進步趨勢</div><h2>數據曲線</h2></div></div><ProgressCharts metrics={metrics.rows} loads={loads.rows} /></section>
     <div className="record-layout">
-      <section className="record-section" id="new-workout"><div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><div className="card"><SessionParticipants student={{ id, name: currentStudent.name }} partners={partners} candidates={candidates} /><RestTimer /><TrainingSessionForm participants={participants} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] && participants.length === 1 ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div></section>
+      <section className="record-section" id="new-workout"><div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><div className="card"><SessionParticipants student={{ id, name: currentStudent.name }} partners={partners} candidates={candidates} /><RestTimer /><TrainingSessionForm participants={participants} initialDate={bookedAt} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] && participants.length === 1 ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div></section>
       <section className="record-section" id="body-metrics"><div className="section-title"><div><div className="eyebrow">身體數據</div><h2>新增身體數據</h2></div></div><div className="card"><form className="stack" action={metricAction}><label>測量日期<input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required /></label><div className="row"><label>體重 kg<input name="weight" type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label><label>體脂 %<input name="bodyFat" type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label></div><div className="row"><label>肌肉量 kg<input name="muscle" type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label><label>脂肪重量 kg<input name="fatMass" type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label></div><button>儲存身體數據</button></form></div></section>
     </div>
     <section className="history-section" id="history"><div className="section-title"><div><div className="eyebrow">課程歷史</div><h2>過去訓練紀錄</h2></div><span className="muted">共 {sessions.length} 堂</span></div>

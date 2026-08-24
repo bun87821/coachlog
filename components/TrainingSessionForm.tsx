@@ -36,12 +36,12 @@ const templateExercises = (exercises: TemplateExercise[], participantIds: string
   setsByStudent: Object.fromEntries(participantIds.map(id => [id, exercise.sets.map(set => ({ reps: set.reps?.toString() || "", weight: set.weight?.toString() || "", unit: set.unit }))])),
 }));
 
-export function TrainingSessionForm({ participants, exerciseNames, lastSession, session }: { participants: TrainingParticipant[]; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] }; session?: EditableSession }) {
+export function TrainingSessionForm({ participants, exerciseNames, lastSession, session, initialDate }: { participants: TrainingParticipant[]; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] }; session?: EditableSession; initialDate?: string }) {
   const router = useRouter();
   const participantIds = useMemo(() => participants.map(participant => participant.id), [participants]);
   const isGroup = participants.length > 1;
   const [exercises, setExercises] = useState<GroupExerciseRow[]>(session ? templateExercises(session.exercises, participantIds) : [newExercise(participantIds)]);
-  const [date, setDate] = useState(session ? session.occurredAt.slice(0, 16) : "");
+  const [date, setDate] = useState(session ? session.occurredAt.slice(0, 16) : initialDate || "");
   const [notesByStudent, setNotesByStudent] = useState<Record<string, string>>(session ? { [participantIds[0]]: session.notes || "" } : {});
   const [activeStudent, setActiveStudent] = useState(participantIds[0]);
   const [copied, setCopied] = useState(false);
@@ -63,12 +63,13 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
     if (session) return;
     const draft = normalizeTrainingDraft(readStoredDraft(draftKey), participantIds);
     if (draft) {
-      setDate(draft.date);
+      setDate(draft.date || initialDate || "");
       setNotesByStudent(draft.notesByStudent);
       setExercises(draft.exercises);
       setDraftRestored(true);
     }
     setDraftReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftKey, participantIds, session]);
 
   useEffect(() => {
@@ -101,7 +102,7 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
       await finalizeTrainingDraft(window.localStorage, draftKey, () => addGroupSession(formData));
       skipNextAutosave.current = true;
       setExercises([newExercise(participantIds)]);
-      setDate("");
+      setDate(initialDate || "");
       setNotesByStudent({});
       setCopied(false);
       setDraftRestored(false);

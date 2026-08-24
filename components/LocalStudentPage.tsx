@@ -27,7 +27,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const startingSets = (): TrainingSetRow[] => Array.from({ length: 4 }, () => ({ reps: "10", weight: "", unit: "kg" as const }));
 const blankExercise = (participantIds: string[]): GroupExerciseRow => ({ name: "", setsByStudent: Object.fromEntries(participantIds.map(id => [id, startingSets()])) });
 
-export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange, update, back }: { data: LocalCoachData; studentId: string; partnerIds: string[]; onPartnersChange: (ids: string[]) => void; update: (data: LocalCoachData) => void; back: () => void }) {
+export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange, startAt, update, back }: { data: LocalCoachData; studentId: string; partnerIds: string[]; onPartnersChange: (ids: string[]) => void; startAt?: string; update: (data: LocalCoachData) => void; back: () => void }) {
   const student = data.students.find(item => item.id === studentId)!;
   const candidates = data.students.filter(item => item.id !== studentId).map(item => ({ id: item.id, name: item.name }));
   const partners = partnerIds.map(id => candidates.find(candidate => candidate.id === id)).filter(Boolean) as Array<{ id: string; name: string }>;
@@ -35,7 +35,7 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
   const participantIds = participants.map(participant => participant.id);
   const isGroup = participants.length > 1;
   const [exercises, setExercises] = useState<GroupExerciseRow[]>([blankExercise(participantIds)]);
-  const [date, setDate] = useState(`${today()}T09:00`);
+  const [date, setDate] = useState(startAt || `${today()}T09:00`);
   const [notesByStudent, setNotesByStudent] = useState<Record<string, string>>({});
   const [activeStudent, setActiveStudent] = useState(student.id);
   const [picking, setPicking] = useState(false);
@@ -63,7 +63,7 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
     try { stored = JSON.parse(window.localStorage.getItem(draftKey) || "null"); } catch { stored = null; }
     const draft = normalizeTrainingDraft(stored, participantIds);
     if (draft) {
-      setDate(draft.date);
+      setDate(draft.date || startAt || `${today()}T09:00`);
       setNotesByStudent(draft.notesByStudent);
       setExercises(draft.exercises);
       setDraftRestored(true);
@@ -112,7 +112,7 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
       await finalizeTrainingDraft(window.localStorage, draftKey, async () => update(next));
       skipNextAutosave.current = true;
       setExercises([blankExercise(participantIds)]);
-      setDate(`${today()}T09:00`);
+      setDate(startAt || `${today()}T09:00`);
       setNotesByStudent({});
       setDraftRestored(false);
       setSaveMessage(isGroup ? `已儲存 ${entries.length} 位學生的訓練紀錄。` : "本次訓練已儲存。");
