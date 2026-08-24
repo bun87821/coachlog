@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ProgressCharts } from "@/components/ProgressCharts";
-import { RestTimer } from "@/components/RestTimer";
 import { StudentSectionNav } from "@/components/StudentSectionNav";
 import { uid, type LocalCoachData, type LocalStudent } from "@/lib/local-coach-data";
 import {
@@ -122,7 +121,6 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
   };
 
   return <main className="shell local-app">
-    <RestTimer />
     <nav className="topbar"><button className="brand local-brand-button" onClick={back}>Coach<span>Log</span></button><span className="local-badge">本機模式</span></nav>
     <StudentSectionNav trailing={<button type="button" onClick={back}>學生預約</button>} />
     <button className="muted local-back-link" onClick={back}>← 返回學生列表</button>

@@ -5,7 +5,6 @@ import { Header } from "@/components/Header";
 import { addMetric } from "@/app/actions";
 import { ProgressCharts } from "@/components/ProgressCharts";
 import { TrainingSessionForm } from "@/components/TrainingSessionForm";
-import { RestTimer } from "@/components/RestTimer";
 import { WorkoutCsvTools } from "@/components/WorkoutCsvTools";
 import { SessionParticipants } from "@/components/SessionParticipants";
 import { StudentSectionNav } from "@/components/StudentSectionNav";
@@ -48,7 +47,6 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   }, {});
 
   return <main className="shell">
-    <RestTimer />
     <Header name={user.name} />
     <StudentSectionNav trailing={<a href="/dashboard#calendar">學生預約</a>} />
     <a className="muted" href="/dashboard">← 返回學生列表</a>

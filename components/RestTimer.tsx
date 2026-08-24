@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import "./RestTimer.css";
 
 const presets = [
@@ -9,6 +10,10 @@ const presets = [
   { label: "1 分半", seconds: 90 },
   { label: "2 分鐘", seconds: 120 },
 ];
+
+const storageKey = "coachlog-rest-timer-v1";
+// 休息結束後這段時間內回到 App，仍然告訴教練「時間到」；再久就當作過期
+const doneGrace = 120_000;
 
 const formatTime = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -24,6 +29,8 @@ export function RestTimer() {
   const audioContext = useRef<AudioContext | null>(null);
   const originalTitle = useRef("");
   const wrapper = useRef<HTMLDivElement>(null);
+  const restored = useRef(false);
+  const pathname = usePathname();
 
   const prepareNotification = async () => {
     try {
@@ -74,7 +81,37 @@ export function RestTimer() {
 
   useEffect(() => {
     originalTitle.current = document.title;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) || "null") as { duration?: number; endAt?: number } | null;
+      if (saved?.duration) {
+        setDuration(saved.duration);
+        const left = saved.endAt ? saved.endAt - Date.now() : 0;
+        if (left > 0) {
+          endAt.current = saved.endAt!;
+          setRemaining(Math.ceil(left / 1000));
+          setRunning(true);
+        } else if (saved.endAt && Date.now() - saved.endAt < doneGrace) {
+          completed.current = true;
+          setRemaining(0);
+          setDone(true);
+        } else {
+          setRemaining(saved.duration);
+          window.localStorage.removeItem(storageKey);
+        }
+      }
+    } catch {}
+    restored.current = true;
   }, []);
+
+  // 記住倒數狀態，換頁或重開 App 都能接回去
+  useEffect(() => {
+    if (!restored.current) return;
+    try {
+      if (running && endAt.current) window.localStorage.setItem(storageKey, JSON.stringify({ duration, endAt: endAt.current }));
+      else if (done) window.localStorage.setItem(storageKey, JSON.stringify({ duration, endAt: Date.now() }));
+      else window.localStorage.removeItem(storageKey);
+    } catch {}
+  }, [done, duration, running, remaining]);
 
   useEffect(() => {
     if (!open) return;
@@ -132,6 +169,9 @@ export function RestTimer() {
   };
 
   const label = done ? "時間到" : running ? `休息中 ${formatTime(remaining)}` : "休息計時器";
+  // 記錄訓練的頁面隨時可開；其他頁面只在倒數中或時間到時出現
+  const onRecordingPage = pathname === "/local" || pathname.startsWith("/students/");
+  if (!onRecordingPage && !running && !done) return null;
 
   return <div className={`rest-timer ${running ? "running" : ""} ${done ? "done" : ""}`} ref={wrapper}>
     {open && <section className="rest-timer-panel" aria-labelledby="rest-timer-title">
