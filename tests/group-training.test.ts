@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   exerciseParticipants,
+  exercisesFromSessionsPayload,
   normalizeTrainingDraft,
   studentExercises,
   toggleExerciseParticipant,
@@ -63,4 +64,20 @@ test("草稿裡已經不在這堂課的學生會被丟掉", () => {
 test("沒有任何學生留下紀錄的草稿視為空草稿", () => {
   const stored = { date: "", notesByStudent: {}, exercises: [{ name: "槓鈴深蹲", setsByStudent: {} }] };
   assert.equal(normalizeTrainingDraft(stored, ["a"]), null);
+});
+
+test("編輯既有課堂時，從表單送出的 sessionsJson 取得該學生的動作", () => {
+  const payload = trainingSessionPayload(participants, [squat()], { a: "備註" });
+  const rows = exercisesFromSessionsPayload(JSON.stringify(payload), "a");
+  assert.deepEqual(rows, [{ name: "槓鈴深蹲", sets: sets("60") }]);
+  assert.deepEqual(exercisesFromSessionsPayload(JSON.stringify(payload), "b"), [{ name: "槓鈴深蹲", sets: sets("30") }]);
+});
+
+test("表單沒有送出訓練內容時給出可讀訊息，而不是伺服器錯誤", () => {
+  assert.throws(() => exercisesFromSessionsPayload("", "a"), /格式不正確/);
+  assert.throws(() => exercisesFromSessionsPayload("{}", "a"), /格式不正確/);
+});
+
+test("找不到該學生的內容時回傳空陣列，交由動作驗證擋下", () => {
+  assert.deepEqual(exercisesFromSessionsPayload("[]", "a"), []);
 });

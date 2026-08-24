@@ -167,3 +167,16 @@ export function normalizeTrainingDraft(raw: unknown, participantIds: string[]): 
 export function writeGroupTrainingDraft(storage: DraftStorage, key: string, draft: GroupTrainingDraft) {
   storage.setItem(key, JSON.stringify(draft));
 }
+
+/** 從表單的 sessionsJson 取出單一學生的動作清單（編輯既有課堂時使用）。 */
+export function exercisesFromSessionsPayload(raw: string, studentId: string): TrainingExerciseRow[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("訓練內容格式不正確，請重新整理後再試一次");
+  }
+  if (!Array.isArray(parsed)) throw new Error("訓練內容格式不正確，請重新整理後再試一次");
+  const entry = (parsed as TrainingSessionPayload[]).find(item => item?.studentId === studentId);
+  return entry?.exercises || [];
+}

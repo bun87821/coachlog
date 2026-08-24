@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { requireCoach } from "@/lib/guard";
+import { exercisesFromSessionsPayload } from "@/lib/training-form-state";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -14,7 +15,7 @@ const value = (entry: FormDataEntryValue | null) => String(entry || "").trim();
 
 export async function updateSession(studentId: string, sessionId: string, formData: FormData) {
   const coach = await requireCoach();
-  const exercises = JSON.parse(value(formData.get("exercisesJson"))) as ExerciseInput[];
+  const exercises = exercisesFromSessionsPayload(value(formData.get("sessionsJson")), studentId) as ExerciseInput[];
   if (!exercises.length || exercises.some(exercise => !exercise.name.trim() || !exercise.sets.length)) {
     throw new Error("請至少保留一個動作與一組紀錄");
   }
