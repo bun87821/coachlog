@@ -6,3 +6,4 @@ npm-debug.log*
 
 # 設計畫面稿的產出檔（每次由 .dc.html 重新產生）
 .design/**/coachlog-*.html
+tsconfig.tsbuildinfo
