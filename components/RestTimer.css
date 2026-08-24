@@ -1,20 +1,67 @@
+/* 懸浮的休息計時器：記錄訓練時可以隨時開始，捲動到哪都按得到 */
 .rest-timer {
+  position: fixed;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(74px, calc(env(safe-area-inset-bottom) + 70px));
+  z-index: 60;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.rest-timer-fab {
+  display: grid;
+  place-items: center;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0 6px;
+  border-radius: 28px;
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 8px 24px #17211b42;
+  touch-action: manipulation;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.rest-timer-fab output {
+  padding: 0 10px;
+  font-size: 19px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.rest-timer.running .rest-timer-fab {
+  background: var(--brand);
+}
+
+.rest-timer.done .rest-timer-fab {
+  background: var(--lime);
+  color: var(--ink);
+  animation: rest-timer-done 900ms ease-in-out 3;
+}
+
+@keyframes rest-timer-done {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.rest-timer-panel {
   display: grid;
   gap: 12px;
-  margin-bottom: 18px;
+  width: min(320px, calc(100vw - 36px));
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #f8faf6;
-  transition: border-color 180ms ease, background-color 180ms ease;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 16px 40px #17211b2e;
 }
 
-.rest-timer.running {
+.rest-timer.running .rest-timer-panel {
   border-color: var(--brand);
-  background: #f1f8f3;
 }
 
-.rest-timer.done {
+.rest-timer.done .rest-timer-panel {
   border-color: #9eb42d;
   background: #f7fbdc;
 }
@@ -48,7 +95,7 @@
 
 .timer-presets {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -110,14 +157,12 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 540px) {
-  .timer-presets {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .rest-timer {
+  .rest-timer-fab {
     transition: none;
+  }
+
+  .rest-timer.done .rest-timer-fab {
+    animation: none;
   }
 }

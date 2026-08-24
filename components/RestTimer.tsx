@@ -18,10 +18,12 @@ export function RestTimer() {
   const [running, setRunning] = useState(false);
   const [done, setDone] = useState(false);
   const [customSeconds, setCustomSeconds] = useState("");
+  const [open, setOpen] = useState(false);
   const endAt = useRef<number | null>(null);
   const completed = useRef(false);
   const audioContext = useRef<AudioContext | null>(null);
   const originalTitle = useRef("");
+  const wrapper = useRef<HTMLDivElement>(null);
 
   const prepareNotification = async () => {
     try {
@@ -34,15 +36,17 @@ export function RestTimer() {
     }
   };
 
-  const start = async (seconds: number) => {
+  const start = (seconds: number) => {
     const safeSeconds = Math.max(5, Math.min(3600, Math.round(seconds)));
-    await prepareNotification();
+    // 通知與音效授權在背景準備；倒數不能被授權對話框擋住
+    void prepareNotification();
     setDuration(safeSeconds);
     setRemaining(safeSeconds);
     setDone(false);
     completed.current = false;
     endAt.current = Date.now() + safeSeconds * 1000;
     setRunning(true);
+    setOpen(false);
   };
 
   const announceDone = () => {
@@ -73,6 +77,21 @@ export function RestTimer() {
   }, []);
 
   useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    const onPointer = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) return;
+      if (!wrapper.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointer);
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!running || endAt.current === null) return;
     const tick = () => {
       const next = Math.max(0, Math.ceil((endAt.current! - Date.now()) / 1000));
@@ -95,8 +114,8 @@ export function RestTimer() {
     setRunning(false);
   };
 
-  const resume = async () => {
-    await prepareNotification();
+  const resume = () => {
+    void prepareNotification();
     endAt.current = Date.now() + remaining * 1000;
     setDone(false);
     completed.current = false;
@@ -112,11 +131,21 @@ export function RestTimer() {
     document.title = originalTitle.current;
   };
 
-  return <section className={`rest-timer ${running ? "running" : ""} ${done ? "done" : ""}`} aria-labelledby="rest-timer-title">
-    <div className="rest-timer-head"><div><span>組間休息</span><h3 id="rest-timer-title">休息計時器</h3></div><output aria-live="polite" aria-label={`剩餘 ${remaining} 秒`}>{formatTime(remaining)}</output></div>
-    <div className="timer-presets" aria-label="快速開始計時">{presets.map(preset => <button type="button" onClick={() => start(preset.seconds)} key={preset.seconds}>{preset.label}</button>)}</div>
-    <div className="custom-timer"><label>自訂秒數<input type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
-    {(running || remaining !== duration || done) && <div className="timer-controls">{running ? <button className="button light" type="button" onClick={pause}>暫停</button> : !done && remaining > 0 ? <button className="button light" type="button" onClick={resume}>繼續</button> : null}<button className="button light" type="button" onClick={reset}>重設</button></div>}
-    <p className="timer-status" role={done ? "alert" : "status"}>{done ? "時間到！可以開始下一組了。" : running ? "倒數中，時間到會提醒你。" : "點選常用時間即可開始。"}</p>
-  </section>;
+  const label = done ? "時間到" : running ? `休息中 ${formatTime(remaining)}` : "休息計時器";
+
+  return <div className={`rest-timer ${running ? "running" : ""} ${done ? "done" : ""}`} ref={wrapper}>
+    {open && <section className="rest-timer-panel" aria-labelledby="rest-timer-title">
+      <div className="rest-timer-head"><div><span>組間休息</span><h3 id="rest-timer-title">休息計時器</h3></div><output aria-live="polite" aria-label={`剩餘 ${remaining} 秒`}>{formatTime(remaining)}</output></div>
+      <div className="timer-presets" aria-label="快速開始計時">{presets.map(preset => <button type="button" onClick={() => start(preset.seconds)} key={preset.seconds}>{preset.label}</button>)}</div>
+      <div className="custom-timer"><label>自訂秒數<input type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
+      {(running || remaining !== duration || done) && <div className="timer-controls">{running ? <button className="button light" type="button" onClick={pause}>暫停</button> : !done && remaining > 0 ? <button className="button light" type="button" onClick={resume}>繼續</button> : null}<button className="button light" type="button" onClick={reset}>重設</button></div>}
+      <p className="timer-status" role={done ? "alert" : "status"}>{done ? "時間到！可以開始下一組了。" : running ? "倒數中，時間到會提醒你。" : "點選常用時間即可開始。"}</p>
+    </section>}
+
+    <button type="button" className="rest-timer-fab" aria-expanded={open} aria-label={label} onClick={() => setOpen(value => !value)}>
+      {running || done
+        ? <output aria-live="off">{formatTime(remaining)}</output>
+        : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7.5" /><path d="M12 10v3.5l2.2 1.6M9.4 2.5h5.2M12 2.5v3" /></svg>}
+    </button>
+  </div>;
 }

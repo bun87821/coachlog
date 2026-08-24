@@ -122,6 +122,7 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
   };
 
   return <main className="shell local-app">
+    <RestTimer />
     <nav className="topbar"><button className="brand local-brand-button" onClick={back}>Coach<span>Log</span></button><span className="local-badge">本機模式</span></nav>
     <StudentSectionNav trailing={<button type="button" onClick={back}>學生預約</button>} />
     <button className="muted local-back-link" onClick={back}>← 返回學生列表</button>
@@ -131,7 +132,6 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
       <section className="record-section" id="new-workout">
         <div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div>
         <div className="card">
-        <RestTimer />
         {!isGroup && student.sessions[0] && <button className="copy-workout" type="button" onClick={() => setExercises(student.sessions[0].exercises.map(exercise => ({ name: exercise.name, setsByStudent: { [student.id]: structuredClone(exercise.sets) } })))}><span>⧉</span><span><strong>複製上次菜單</strong><small>複製後可自由調整重量與次數</small></span></button>}
         <p className="copy-status" aria-live="polite">{saveMessage || (draftRestored ? "已恢復尚未儲存的訓練草稿。" : "")}</p>
         <div className="session-participants">
