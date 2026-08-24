@@ -27,25 +27,68 @@ export function RestTimer() {
   const endAt = useRef<number | null>(null);
   const completed = useRef(false);
   const audioContext = useRef<AudioContext | null>(null);
+  const beep = useRef<HTMLAudioElement | null>(null);
   const originalTitle = useRef("");
   const wrapper = useRef<HTMLDivElement>(null);
   const restored = useRef(false);
   const pathname = usePathname();
 
-  const prepareNotification = async () => {
+  // iOS 只允許「使用者操作當下」播放過的音訊之後自動播放，
+  // 而且 Web Audio 會被側邊靜音開關關掉，<audio> 走媒體聲道則不會。
+  // 所以按下計時的那一刻先靜音播一次把它解鎖，時間到才有聲音。
+  const unlockSound = () => {
+    try {
+      beep.current ||= Object.assign(new Audio("/rest-timer-done.wav"), { preload: "auto" });
+      const element = beep.current;
+      element.muted = true;
+      element.play().then(() => {
+        element.pause();
+        element.currentTime = 0;
+        element.muted = false;
+      }).catch(() => { element.muted = false; });
+    } catch {}
     try {
       const AudioContextClass = window.AudioContext;
       audioContext.current ||= new AudioContextClass();
-      await audioContext.current.resume();
+      void audioContext.current.resume();
     } catch {}
+  };
+
+  const prepareNotification = async () => {
     if ("Notification" in window && Notification.permission === "default") {
       try { await Notification.requestPermission(); } catch {}
     }
   };
 
+  const playDoneSound = () => {
+    const element = beep.current;
+    if (element) {
+      element.currentTime = 0;
+      element.play().catch(() => playFallbackTone());
+      return;
+    }
+    playFallbackTone();
+  };
+
+  const playFallbackTone = () => {
+    try {
+      const context = audioContext.current;
+      if (!context) return;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(.18, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .7);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + .7);
+    } catch {}
+  };
+
   const start = (seconds: number) => {
     const safeSeconds = Math.max(5, Math.min(3600, Math.round(seconds)));
-    // 通知與音效授權在背景準備；倒數不能被授權對話框擋住
+    unlockSound();
+    // 通知授權在背景準備；倒數不能被授權對話框擋住
     void prepareNotification();
     setDuration(safeSeconds);
     setRemaining(safeSeconds);
@@ -59,19 +102,7 @@ export function RestTimer() {
   const announceDone = () => {
     setDone(true);
     navigator.vibrate?.([180, 100, 180]);
-    try {
-      const context = audioContext.current;
-      if (context) {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        oscillator.frequency.value = 880;
-        gain.gain.setValueAtTime(.18, context.currentTime);
-        gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .7);
-        oscillator.connect(gain).connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + .7);
-      }
-    } catch {}
+    playDoneSound();
     if ("Notification" in window && Notification.permission === "granted") {
       try { new Notification("休息時間結束", { body: "可以開始下一組了！", tag: "coachlog-rest-timer" }); } catch {}
     }
@@ -152,6 +183,7 @@ export function RestTimer() {
   };
 
   const resume = () => {
+    unlockSound();
     void prepareNotification();
     endAt.current = Date.now() + remaining * 1000;
     setDone(false);
@@ -180,6 +212,7 @@ export function RestTimer() {
       <div className="custom-timer"><label>自訂秒數<input type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
       {(running || remaining !== duration || done) && <div className="timer-controls">{running ? <button className="button light" type="button" onClick={pause}>暫停</button> : !done && remaining > 0 ? <button className="button light" type="button" onClick={resume}>繼續</button> : null}<button className="button light" type="button" onClick={reset}>重設</button></div>}
       <p className="timer-status" role={done ? "alert" : "status"}>{done ? "時間到！可以開始下一組了。" : running ? "倒數中，時間到會提醒你。" : "點選常用時間即可開始。"}</p>
+      <button type="button" className="timer-sound-test" onClick={() => { unlockSound(); window.setTimeout(playDoneSound, 60); }}>試聽提示音<small>聽不到請關閉手機側邊的靜音開關</small></button>
     </section>}
 
     <button type="button" className="rest-timer-fab" aria-expanded={open} aria-label={label} onClick={() => setOpen(value => !value)}>
