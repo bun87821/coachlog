@@ -12,6 +12,7 @@ const presets = [
 ];
 
 const storageKey = "coachlog-rest-timer-v1";
+const soundKey = "coachlog-rest-timer-sound-v1";
 // 休息結束後這段時間內回到 App，仍然告訴教練「時間到」；再久就當作過期
 const doneGrace = 120_000;
 
@@ -24,6 +25,7 @@ export function RestTimer() {
   const [done, setDone] = useState(false);
   const [customSeconds, setCustomSeconds] = useState("");
   const [open, setOpen] = useState(false);
+  const [soundOn, setSoundOn] = useState(true);
   const endAt = useRef<number | null>(null);
   const completed = useRef(false);
   const audioContext = useRef<AudioContext | null>(null);
@@ -37,6 +39,7 @@ export function RestTimer() {
   // 而且 Web Audio 會被側邊靜音開關關掉，<audio> 走媒體聲道則不會。
   // 所以按下計時的那一刻先靜音播一次把它解鎖，時間到才有聲音。
   const unlockSound = () => {
+    if (!soundOn) return;
     try {
       beep.current ||= Object.assign(new Audio("/rest-timer-done.wav"), { preload: "auto" });
       const element = beep.current;
@@ -61,6 +64,7 @@ export function RestTimer() {
   };
 
   const playDoneSound = () => {
+    if (!soundOn) return;
     const element = beep.current;
     if (element) {
       element.currentTime = 0;
@@ -131,6 +135,9 @@ export function RestTimer() {
         }
       }
     } catch {}
+    try {
+      if (window.localStorage.getItem(soundKey) === "off") setSoundOn(false);
+    } catch {}
     restored.current = true;
   }, []);
 
@@ -191,6 +198,19 @@ export function RestTimer() {
     setRunning(true);
   };
 
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    try { window.localStorage.setItem(soundKey, next ? "on" : "off"); } catch {}
+    if (next) {
+      try {
+        beep.current ||= Object.assign(new Audio("/rest-timer-done.wav"), { preload: "auto" });
+        beep.current.currentTime = 0;
+        beep.current.play().catch(() => {});
+      } catch {}
+    }
+  };
+
   const reset = () => {
     endAt.current = null;
     setRunning(false);
@@ -212,7 +232,12 @@ export function RestTimer() {
       <div className="custom-timer"><label>自訂秒數<input type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
       {(running || remaining !== duration || done) && <div className="timer-controls">{running ? <button className="button light" type="button" onClick={pause}>暫停</button> : !done && remaining > 0 ? <button className="button light" type="button" onClick={resume}>繼續</button> : null}<button className="button light" type="button" onClick={reset}>重設</button></div>}
       <p className="timer-status" role={done ? "alert" : "status"}>{done ? "時間到！可以開始下一組了。" : running ? "倒數中，時間到會提醒你。" : "點選常用時間即可開始。"}</p>
-      <button type="button" className="timer-sound-test" onClick={() => { unlockSound(); window.setTimeout(playDoneSound, 60); }}>試聽提示音<small>聽不到請關閉手機側邊的靜音開關</small></button>
+      <div className="timer-sound">
+        <button type="button" className="timer-sound-toggle" role="switch" aria-checked={soundOn} onClick={toggleSound}><span className="switch-track" aria-hidden="true"><span className="switch-knob" /></span>提示音{soundOn ? "開啟" : "關閉"}</button>
+        {soundOn
+          ? <button type="button" className="timer-sound-test" onClick={() => { unlockSound(); window.setTimeout(playDoneSound, 60); }}>試聽<small>聽不到請關閉手機側邊的靜音開關</small></button>
+          : <small className="timer-sound-note">時間到時只會震動與顯示提醒。</small>}
+      </div>
     </section>}
 
     <button type="button" className="rest-timer-fab" aria-expanded={open} aria-label={label} onClick={() => setOpen(value => !value)}>
