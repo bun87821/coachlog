@@ -15,9 +15,16 @@ import {
   toggleExerciseParticipant,
   trainingDraftKeyFor,
   trainingInputMode,
+  applyUnitToExercise,
+  exerciseUnit,
+  isExercisePristine,
+  matchesLastPerformance,
+  prefillFromLastPerformance,
+  propagateFirstSet,
   trainingSessionPayload,
   writeGroupTrainingDraft,
   type GroupExerciseRow,
+  type LastPerformanceByStudent,
   type TrainingSetRow,
 } from "@/lib/training-form-state";
 import { nextFieldOnEnter, selectOnFocus } from "@/lib/number-input";
@@ -45,6 +52,20 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
   const skipNextAutosave = useRef(false);
   const draftKey = trainingDraftKeyFor("local", participantIds);
   const payload = trainingSessionPayload(participants, exercises, notesByStudent);
+  const lastPerformance: LastPerformanceByStudent = {};
+  for (const participant of participants) {
+    const owner = data.students.find(item => item.id === participant.id);
+    if (!owner) continue;
+    const byExercise: LastPerformanceByStudent[string] = {};
+    // sessions 以新到舊排列，第一次遇到的動作就是最近一次
+    for (const past of [...owner.sessions].sort((a, b) => b.date.localeCompare(a.date))) {
+      for (const exercise of past.exercises) {
+        if (!exercise.name || byExercise[exercise.name]) continue;
+        byExercise[exercise.name] = { occurredAt: past.date, sets: exercise.sets.map(set => ({ ...set })) };
+      }
+    }
+    lastPerformance[participant.id] = byExercise;
+  }
   const activeName = participants.find(participant => participant.id === activeStudent)?.name || "";
   const partnersByGroup = data.students.reduce((all: Record<string, string[]>, item) => {
     if (item.id === student.id) return all;
@@ -92,6 +113,22 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
     const sets = (row.setsByStudent[activeStudent] || []).map((set, i) => i === setIndex ? { ...set, ...patch } : set);
     return { ...row, setsByStudent: { ...row.setsByStudent, [activeStudent]: sets } };
   }));
+
+  const chooseExercise = (exerciseIndex: number, exercise: GroupExerciseRow, name: string) => {
+    const wasPrefilled = matchesLastPerformance(exercise, exercise.name, lastPerformance);
+    updateExercise(exerciseIndex, isExercisePristine(exercise) || wasPrefilled
+      ? prefillFromLastPerformance(exercise, name, lastPerformance, wasPrefilled ? startingSets() : undefined)
+      : { ...exercise, name });
+  };
+
+  const editSet = (exerciseIndex: number, exercise: GroupExerciseRow, setIndex: number, field: "reps" | "weight", value: string) => {
+    const sets = exercise.setsByStudent[activeStudent] || [];
+    if (setIndex === 0) {
+      updateSets(exerciseIndex, activeStudent, propagateFirstSet(sets, field, sets[0]?.[field] ?? "", value));
+      return;
+    }
+    updateSet(exerciseIndex, setIndex, { [field]: value });
+  };
 
   const saveSession = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -157,14 +194,27 @@ export function LocalStudentPage({ data, studentId, partnerIds, onPartnersChange
             const sets = exercise.setsByStudent[activeStudent];
             const joined = isExerciseParticipant(exercise, activeStudent);
             return <div className="exercise-block" key={exerciseIndex}>
-              <div className="exercise-title-row"><div className="exercise-name-fields"><label>動作 {exerciseIndex + 1}<select value={data.exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => updateExercise(exerciseIndex, { ...exercise, name: event.target.value })}><option value="">選擇既有動作</option>{data.exerciseNames.map(name => <option key={name}>{name}</option>)}</select></label><label>或輸入新動作名稱<input list="local-exercise-list" value={exercise.name} onChange={event => updateExercise(exerciseIndex, { ...exercise, name: event.target.value })} placeholder="例如：槓鈴深蹲" required /></label></div>{exercises.length > 1 && <button className="danger-link" type="button" onClick={() => setExercises(rows => rows.filter((_, index) => index !== exerciseIndex))}>移除動作</button>}</div>
+              <div className="exercise-title-row"><div className="exercise-name-fields"><label>動作 {exerciseIndex + 1}<select value={data.exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => chooseExercise(exerciseIndex, exercise, event.target.value)}><option value="">選擇既有動作</option>{data.exerciseNames.map(name => <option key={name}>{name}</option>)}</select></label><label>或輸入新動作名稱<input list="local-exercise-list" value={exercise.name} onChange={event => chooseExercise(exerciseIndex, exercise, event.target.value)} placeholder="例如：槓鈴深蹲" required /></label></div>{exercises.length > 1 && <button className="danger-link" type="button" onClick={() => setExercises(rows => rows.filter((_, index) => index !== exerciseIndex))}>移除動作</button>}</div>
+              <div className="exercise-meta">
+                <div className="unit-toggle" role="group" aria-label="這個動作的重量單位">
+                  {(["kg", "lb"] as const).map(unit => <button key={unit} type="button" className={exerciseUnit(exercise) === unit ? "active" : ""} aria-pressed={exerciseUnit(exercise) === unit} onClick={() => updateExercise(exerciseIndex, applyUnitToExercise(exercise, unit))}>{unit}</button>)}
+                </div>
+                {(() => {
+                  const previous = exercise.name ? lastPerformance[activeStudent]?.[exercise.name] : undefined;
+                  if (!previous) return null;
+                  return <button type="button" className="last-performance" onClick={() => updateExercise(exerciseIndex, prefillFromLastPerformance(exercise, exercise.name, lastPerformance))}>
+                    <span>上次 {new Date(previous.occurredAt).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}</span>
+                    <strong>{previous.sets.map(set => `${set.weight || "—"}${set.unit}×${set.reps || "—"}`).join("、")}</strong>
+                  </button>;
+                })()}
+              </div>
               {isGroup && <div className="exercise-participants"><span className="set-head">誰做這個動作</span>{participants.map(participant => {
                 const included = isExerciseParticipant(exercise, participant.id);
                 const onlyOne = included && exerciseParticipants(exercise).length === 1;
                 return <button key={participant.id} type="button" className={`participant-chip ${included ? "included" : ""}`} aria-pressed={included} disabled={onlyOne} title={onlyOne ? "每個動作至少要有一位學生" : undefined} onClick={() => updateExercise(exerciseIndex, toggleExerciseParticipant(exercise, participant.id, startingSets()))}>{participant.name}</button>;
               })}</div>}
               {joined && sets ? <>
-                <div className="sets-table"><div className="set-row set-head"><span>組</span><span>次數</span><span>重量</span><span>單位</span><span /></div>{sets.map((set, setIndex) => <div className="set-row" key={setIndex}><strong>{setIndex + 1}</strong><input {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => updateSet(exerciseIndex, setIndex, { reps: event.target.value })} /><input {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("decimal")} min="0" step=".25" value={set.weight} onChange={event => updateSet(exerciseIndex, setIndex, { weight: event.target.value })} /><select value={set.unit} onChange={event => updateSet(exerciseIndex, setIndex, { unit: event.target.value as "kg" | "lb" })}><option>kg</option><option>lb</option></select><button className="remove-set" type="button" disabled={sets.length === 1} onClick={() => updateSets(exerciseIndex, activeStudent, sets.filter((_, index) => index !== setIndex))}>×</button></div>)}</div>
+                <div className="sets-table"><div className="set-row set-head"><span>組</span><span>次數</span><span>重量 {exerciseUnit(exercise)}</span><span /></div>{sets.map((set, setIndex) => <div className="set-row" key={setIndex}><strong>{setIndex + 1}</strong><input {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => editSet(exerciseIndex, exercise, setIndex, "reps", event.target.value)} /><input {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("decimal")} min="0" step=".25" value={set.weight} onChange={event => editSet(exerciseIndex, exercise, setIndex, "weight", event.target.value)} /><button className="remove-set" type="button" disabled={sets.length === 1} onClick={() => updateSets(exerciseIndex, activeStudent, sets.filter((_, index) => index !== setIndex))}>×</button></div>)}</div>
                 <div className="row"><button className="button light add-set" type="button" onClick={() => updateSets(exerciseIndex, activeStudent, [...sets, { reps: "10", weight: "", unit: "kg" }])}>＋ 新增一組</button><button className="button light copy-first-weight" type="button" disabled={!canCopyFirstSetWeight({ name: exercise.name, sets })} onClick={() => updateSets(exerciseIndex, activeStudent, copyFirstSetWeight({ name: exercise.name, sets }).sets)}>套用第 1 組重量</button></div>
               </> : <p className="exercise-skipped">{activeName}今天沒有做這個動作，點上方名字即可加入。</p>}
             </div>;

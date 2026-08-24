@@ -17,7 +17,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   const user = await requireCoach();
   const bookedAt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(csvResult.at || "") ? csvResult.at : undefined;
   const requestedPartners = (csvResult.with || "").split(",").map(value => value.trim()).filter(Boolean).filter(value => value !== id);
-  const [student, metrics, exercises, loads, sessionRows, coachStudents, groupPartners] = await Promise.all([
+  const [student, metrics, exercises, loads, sessionRows, coachStudents, groupPartners, lastSets] = await Promise.all([
     db.query(`SELECT * FROM students WHERE id=$1 AND coach_id=$2`, [id, user.id]),
     db.query(`SELECT measured_at::text date,weight::float,"body_fat"::float "bodyFat",muscle_mass::float muscle,fat_mass::float "fatMass" FROM body_metrics WHERE student_id=$1 ORDER BY measured_at`, [id]),
     db.query(`SELECT name FROM exercises WHERE coach_id=$1 ORDER BY name`, [user.id]),
@@ -25,6 +25,17 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
     db.query(`SELECT s.id,s.occurred_at,s.notes,s.group_id,e.name exercise_name,es.set_number,es.reps,es.weight::float,es.unit FROM sessions s LEFT JOIN exercise_sets es ON es.session_id=s.id LEFT JOIN exercises e ON e.id=es.exercise_id WHERE s.student_id=$1 ORDER BY s.occurred_at DESC,e.name,es.set_number`, [id]),
     db.query(`SELECT id,name FROM students WHERE coach_id=$1 AND id<>$2 ORDER BY sort_order ASC NULLS LAST,created_at DESC,id`, [user.id, id]),
     db.query(`SELECT partner.group_id,st.id,st.name FROM sessions partner JOIN students st ON st.id=partner.student_id WHERE partner.student_id<>$1 AND partner.group_id IN (SELECT group_id FROM sessions WHERE student_id=$1 AND group_id IS NOT NULL)`, [id]),
+    db.query(`WITH ranked AS (
+      SELECT s.student_id, e.name exercise, s.occurred_at, es.set_number, es.reps, es.weight, es.unit,
+             DENSE_RANK() OVER (PARTITION BY s.student_id, e.name ORDER BY s.occurred_at DESC) position
+      FROM sessions s
+      JOIN exercise_sets es ON es.session_id=s.id
+      JOIN exercises e ON e.id=es.exercise_id
+      JOIN students st ON st.id=s.student_id
+      WHERE s.student_id = ANY($1::uuid[]) AND st.coach_id=$2
+    )
+    SELECT student_id,exercise,occurred_at,set_number,reps,weight::float,unit FROM ranked WHERE position=1 ORDER BY student_id,exercise,set_number`,
+      [[id, ...requestedPartners], user.id]),
   ]);
   if (!student.rows[0]) notFound();
   const currentStudent = student.rows[0];
@@ -42,6 +53,12 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
   const candidates = coachStudents.rows.map((row: any) => ({ id: String(row.id), name: row.name as string }));
   const partners = requestedPartners.map(partnerId => candidates.find(candidate => candidate.id === partnerId)).filter(Boolean) as Array<{ id: string; name: string }>;
   const participants = [{ id, name: currentStudent.name as string }, ...partners];
+  const lastPerformance = lastSets.rows.reduce((all: Record<string, Record<string, { occurredAt: string; sets: Array<{ reps: string; weight: string; unit: "kg" | "lb" }> }>>, row: any) => {
+    const forStudent = all[row.student_id] ||= {};
+    const entry = forStudent[row.exercise] ||= { occurredAt: new Date(row.occurred_at).toISOString(), sets: [] };
+    entry.sets.push({ reps: row.reps?.toString() || "", weight: row.weight?.toString() || "", unit: row.unit === "lb" ? "lb" : "kg" });
+    return all;
+  }, {});
   const partnersByGroup = groupPartners.rows.reduce((all: Record<string, string[]>, row: any) => {
     (all[row.group_id] ||= []).push(row.name);
     return all;
@@ -54,7 +71,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
     <div className="section-title student-heading" id="student-overview"><div><div className="eyebrow">學生紀錄</div><h1>{currentStudent.name}</h1><div className="muted">{currentStudent.email} {currentStudent.phone}</div></div><a className="button mobile-quick-add" href="#new-workout">＋ 新增訓練</a></div>
     <section className="progress-section" id="progress"><div className="section-title"><div><div className="eyebrow">進步趨勢</div><h2>數據曲線</h2></div></div><ProgressCharts metrics={metrics.rows} loads={loads.rows} /></section>
     <div className="record-layout">
-      <section className="record-section" id="new-workout"><div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><div className="card"><SessionParticipants student={{ id, name: currentStudent.name }} partners={partners} candidates={candidates} /><TrainingSessionForm participants={participants} initialDate={bookedAt} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] && participants.length === 1 ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div></section>
+      <section className="record-section" id="new-workout"><div className="section-title"><div><div className="eyebrow">新增紀錄</div><h2>本次訓練內容</h2></div></div><div className="card"><SessionParticipants student={{ id, name: currentStudent.name }} partners={partners} candidates={candidates} /><TrainingSessionForm participants={participants} initialDate={bookedAt} lastPerformance={lastPerformance} exerciseNames={exercises.rows.map(row => row.name)} lastSession={sessions[0] && participants.length === 1 ? { occurredAt: sessions[0].occurredAt.toISOString?.() || String(sessions[0].occurredAt), exercises: sessions[0].exercises } : undefined} /></div></section>
       <section className="record-section" id="body-metrics"><div className="section-title"><div><div className="eyebrow">身體數據</div><h2>新增身體數據</h2></div></div><div className="card"><form className="stack" action={metricAction}><label>測量日期<input name="date" type="date" defaultValue={new Date().toISOString().slice(0,10)} required /></label><div className="row"><label>體重 kg<input name="weight" {...selectOnFocus} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label><label>體脂 %<input name="bodyFat" {...selectOnFocus} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label></div><div className="row"><label>肌肉量 kg<input name="muscle" {...selectOnFocus} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label><label>脂肪重量 kg<input name="fatMass" {...selectOnFocus} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.1" /></label></div><button>儲存身體數據</button></form></div></section>
     </div>
     <section className="history-section" id="history"><div className="section-title"><div><div className="eyebrow">課程歷史</div><h2>過去訓練紀錄</h2></div><span className="muted">共 {sessions.length} 堂</span></div>

@@ -546,3 +546,59 @@ article.schedule-row {
     grid-column: 2;
   }
 }
+
+/* 單位一個動作選一次，把寬度還給重量欄位 */
+.exercise-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.unit-toggle {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.unit-toggle button {
+  min-width: 46px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.unit-toggle button.active {
+  background: var(--brand);
+  color: #fff;
+}
+
+.last-performance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 1px solid #bcd6c5;
+  border-radius: 10px;
+  background: #e7f2eb;
+  color: var(--ink);
+  font-size: 12px;
+  text-align: left;
+}
+
+.last-performance span {
+  color: var(--brand);
+  font-weight: 800;
+}
+
+.last-performance strong {
+  font-weight: 700;
+}

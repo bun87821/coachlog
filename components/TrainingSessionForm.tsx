@@ -15,10 +15,17 @@ import {
   toggleExerciseParticipant,
   trainingDraftKeyFor,
   trainingInputMode,
+  applyUnitToExercise,
+  exerciseUnit,
+  isExercisePristine,
+  matchesLastPerformance,
+  prefillFromLastPerformance,
+  propagateFirstSet,
   trainingSessionPayload,
   writeGroupTrainingDraft,
   type GroupExerciseRow,
   type TrainingParticipant,
+  type LastPerformanceByStudent,
   type TrainingSetRow,
 } from "@/lib/training-form-state";
 import { nextFieldOnEnter, selectOnFocus } from "@/lib/number-input";
@@ -37,7 +44,7 @@ const templateExercises = (exercises: TemplateExercise[], participantIds: string
   setsByStudent: Object.fromEntries(participantIds.map(id => [id, exercise.sets.map(set => ({ reps: set.reps?.toString() || "", weight: set.weight?.toString() || "", unit: set.unit }))])),
 }));
 
-export function TrainingSessionForm({ participants, exerciseNames, lastSession, session, initialDate }: { participants: TrainingParticipant[]; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] }; session?: EditableSession; initialDate?: string }) {
+export function TrainingSessionForm({ participants, exerciseNames, lastSession, session, initialDate, lastPerformance }: { participants: TrainingParticipant[]; exerciseNames: string[]; lastSession?: { occurredAt: string; exercises: TemplateExercise[] }; session?: EditableSession; initialDate?: string; lastPerformance?: LastPerformanceByStudent }) {
   const router = useRouter();
   const participantIds = useMemo(() => participants.map(participant => participant.id), [participants]);
   const isGroup = participants.length > 1;
@@ -89,6 +96,25 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
     const sets = (row.setsByStudent[studentId] || []).map((set, i) => i === setIndex ? { ...set, ...patch } : set);
     return { ...row, setsByStudent: { ...row.setsByStudent, [studentId]: sets } };
   }));
+
+  const chooseExercise = (exerciseIndex: number, exercise: GroupExerciseRow, name: string) => {
+    const history = lastPerformance || {};
+    // 帶進來但還沒被改過的內容，換動作時要跟著換掉，不能留著上一個動作的重量
+    const wasPrefilled = matchesLastPerformance(exercise, exercise.name, history);
+    const canPrefill = Boolean(lastPerformance) && !session && (isExercisePristine(exercise) || wasPrefilled);
+    updateExercise(exerciseIndex, canPrefill
+      ? prefillFromLastPerformance(exercise, name, history, wasPrefilled ? startingSets() : undefined)
+      : { ...exercise, name });
+  };
+
+  const editSet = (exerciseIndex: number, exercise: GroupExerciseRow, setIndex: number, field: "reps" | "weight", value: string) => {
+    const sets = exercise.setsByStudent[activeStudent] || [];
+    if (setIndex === 0) {
+      updateSets(exerciseIndex, activeStudent, propagateFirstSet(sets, field, sets[0]?.[field] ?? "", value));
+      return;
+    }
+    updateSet(exerciseIndex, activeStudent, setIndex, { [field]: value });
+  };
 
   const copyLastSession = () => {
     if (!lastSession) return;
@@ -151,10 +177,25 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
         return <div className="exercise-block" key={exerciseIndex}>
           <div className="exercise-title-row">
             <div className="exercise-name-fields">
-              <label>動作 {exerciseIndex + 1}<select aria-label={`選擇動作 ${exerciseIndex + 1}`} value={exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => updateExercise(exerciseIndex, { ...exercise, name: event.target.value })}><option value="">選擇既有動作</option>{exerciseNames.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
-              <label className="custom-exercise-label">或輸入新動作名稱<input list={exerciseListId} value={exercise.name} onChange={event => updateExercise(exerciseIndex, { ...exercise, name: event.target.value })} placeholder="例如：槓鈴深蹲" required /></label>
+              <label>動作 {exerciseIndex + 1}<select aria-label={`選擇動作 ${exerciseIndex + 1}`} value={exerciseNames.includes(exercise.name) ? exercise.name : ""} onChange={event => chooseExercise(exerciseIndex, exercise, event.target.value)}><option value="">選擇既有動作</option>{exerciseNames.map(name => <option key={name} value={name}>{name}</option>)}</select></label>
+              <label className="custom-exercise-label">或輸入新動作名稱<input list={exerciseListId} value={exercise.name} onChange={event => chooseExercise(exerciseIndex, exercise, event.target.value)} placeholder="例如：槓鈴深蹲" required /></label>
             </div>
             {exercises.length > 1 && <button className="danger-link" type="button" onClick={() => setExercises(rows => rows.filter((_, index) => index !== exerciseIndex))}>移除動作</button>}
+          </div>
+
+          <div className="exercise-meta">
+            <div className="unit-toggle" role="group" aria-label="這個動作的重量單位">
+              {(["kg", "lb"] as const).map(unit => <button key={unit} type="button" className={exerciseUnit(exercise) === unit ? "active" : ""} aria-pressed={exerciseUnit(exercise) === unit} onClick={() => updateExercise(exerciseIndex, applyUnitToExercise(exercise, unit))}>{unit}</button>)}
+            </div>
+            {(() => {
+              const previous = exercise.name ? lastPerformance?.[activeStudent]?.[exercise.name] : undefined;
+              if (!previous) return null;
+              const summary = previous.sets.map(set => `${set.weight || "—"}${set.unit}×${set.reps || "—"}`).join("、");
+              return <button type="button" className="last-performance" onClick={() => updateExercise(exerciseIndex, prefillFromLastPerformance(exercise, exercise.name, lastPerformance!))}>
+                <span>上次 {new Date(previous.occurredAt).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" })}</span>
+                <strong>{summary}</strong>
+              </button>;
+            })()}
           </div>
 
           {isGroup && <div className="exercise-participants">
@@ -176,12 +217,12 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
 
           {joined && sets ? <>
             <div className="sets-table">
-              <div className="set-row set-head"><span>組</span><span>次數</span><span>重量</span><span>單位</span><span /></div>
+              <div className="set-row set-head"><span>組</span><span>次數</span><span>重量 {exerciseUnit(exercise)}</span><span /></div>
               {sets.map((set, setIndex) => <div className="set-row" key={setIndex}>
                 <strong>{setIndex + 1}</strong>
-                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組次數`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { reps: event.target.value })} />
-                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組重量`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.25" value={set.weight} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { weight: event.target.value })} />
-                <select aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組單位`} value={set.unit} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { unit: event.target.value as "kg" | "lb" })}><option value="kg">kg</option><option value="lb">lb</option></select>
+                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組次數`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => editSet(exerciseIndex, exercise, setIndex, "reps", event.target.value)} />
+                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組重量`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.25" value={set.weight} onChange={event => editSet(exerciseIndex, exercise, setIndex, "weight", event.target.value)} />
+                
                 <button className="remove-set" type="button" aria-label={`移除第 ${setIndex + 1} 組`} disabled={sets.length === 1} onClick={() => updateSets(exerciseIndex, activeStudent, sets.filter((_, index) => index !== setIndex))}>×</button>
               </div>)}
             </div>

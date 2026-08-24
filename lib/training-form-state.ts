@@ -180,3 +180,84 @@ export function exercisesFromSessionsPayload(raw: string, studentId: string): Tr
   const entry = (parsed as TrainingSessionPayload[]).find(item => item?.studentId === studentId);
   return entry?.exercises || [];
 }
+
+export type LastPerformance = {
+  occurredAt: string;
+  sets: TrainingSetRow[];
+};
+
+/** 每位學生、每個動作，最近一次做的組數內容。 */
+export type LastPerformanceByStudent = Record<string, Record<string, LastPerformance>>;
+
+/** 單位改成整個動作共用一個，所以套用到這個動作底下每位學生的每一組。 */
+export function applyUnitToExercise(exercise: GroupExerciseRow, unit: TrainingSetRow["unit"]): GroupExerciseRow {
+  return {
+    ...exercise,
+    setsByStudent: Object.fromEntries(
+      Object.entries(exercise.setsByStudent).map(([studentId, sets]) => [studentId, sets.map(set => ({ ...set, unit }))]),
+    ),
+  };
+}
+
+export function exerciseUnit(exercise: GroupExerciseRow): TrainingSetRow["unit"] {
+  for (const sets of Object.values(exercise.setsByStudent)) {
+    if (sets[0]) return sets[0].unit;
+  }
+  return "kg";
+}
+
+/**
+ * 打完第一組就往下套用到還沒填、或原本跟著第一組的組別。
+ * 已經被改成別的數字的組別不會被蓋掉，所以遞減組的紀錄仍然安全。
+ */
+export function propagateFirstSet(
+  sets: TrainingSetRow[],
+  field: "reps" | "weight",
+  previous: string,
+  next: string,
+): TrainingSetRow[] {
+  return sets.map((set, index) => {
+    if (index === 0) return { ...set, [field]: next };
+    const following = set[field] === "" || set[field] === previous;
+    return following ? { ...set, [field]: next } : set;
+  });
+}
+
+/** 這個動作還沒有任何人填過重量，代表可以安全地帶入上次的數字。 */
+export function isExercisePristine(exercise: GroupExerciseRow) {
+  return Object.values(exercise.setsByStudent).every(sets => sets.every(set => set.weight === ""));
+}
+
+/**
+ * 選好動作後，把每位學生自己上次做這個動作的內容帶進來。
+ * 沒有紀錄的學生保留原本的組數；給了 fallback 則改用 fallback，
+ * 用於「換成另一個動作」時清掉上一個動作帶進來的數字。
+ */
+export function prefillFromLastPerformance(
+  exercise: GroupExerciseRow,
+  name: string,
+  last: LastPerformanceByStudent,
+  fallback?: TrainingSetRow[],
+): GroupExerciseRow {
+  const setsByStudent = Object.fromEntries(
+    Object.entries(exercise.setsByStudent).map(([studentId, sets]) => {
+      const previous = last[studentId]?.[name];
+      if (previous?.sets.length) return [studentId, previous.sets.map(set => ({ ...set }))];
+      return [studentId, fallback ? fallback.map(set => ({ ...set })) : sets];
+    }),
+  );
+  return { ...exercise, name, setsByStudent };
+}
+
+/** 目前的內容是不是就是上次帶入的紀錄（教練還沒動過）。 */
+export function matchesLastPerformance(exercise: GroupExerciseRow, name: string, last: LastPerformanceByStudent) {
+  if (!name) return false;
+  const entries = Object.entries(exercise.setsByStudent);
+  if (!entries.length) return false;
+  return entries.every(([studentId, sets]) => {
+    const previous = last[studentId]?.[name];
+    if (!previous) return sets.every(set => set.weight === "");
+    return sets.length === previous.sets.length
+      && sets.every((set, index) => set.reps === previous.sets[index].reps && set.weight === previous.sets[index].weight && set.unit === previous.sets[index].unit);
+  });
+}
