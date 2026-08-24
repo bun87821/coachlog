@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:Arial,"Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;}
+a{color:#176b45;}a:hover{color:#0f4d31;}
+</style>
+</helmet>
+<div style="width:390px;height:844px;background:#17211b;color:#17211b;position:relative;overflow:hidden">
+
+  <div style="position:absolute;inset:0;background:#f5f4ed;opacity:0.35;padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div style="height:20px;background:#dfe3dc;border-radius:6px;width:60%"></div>
+    <div style="height:120px;background:#fff;border-radius:18px"></div>
+    <div style="height:220px;background:#fff;border-radius:18px"></div>
+  </div>
+
+  <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:18px;display:flex;flex-direction:column;gap:14px;height:700px;box-sizing:border-box">
+    <div style="width:44px;height:5px;border-radius:3px;background:#dfe3dc;align-self:center"></div>
+
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="color:#176b45;font-weight:800;letter-spacing:2px;font-size:11px">選擇學生</div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px">今天誰一起上課</div>
+    </div>
+
+    <div style="border:1px solid #dfe3dc;border-radius:10px;padding:12px 14px;color:#67736b;font-size:15px">搜尋學生姓名</div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:12px;color:#67736b;font-weight:800">最近的組合</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;border:1px solid #bcd6c5;background:#e7f2eb;border-radius:12px;padding:12px 14px;min-height:48px;box-sizing:border-box">
+          <span style="width:26px;height:26px;border-radius:50%;background:#176b45;color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center">王</span>
+          <span style="width:26px;height:26px;border-radius:50%;background:#7e4f2a;color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center;margin-left:-14px;border:2px solid #e7f2eb">李</span>
+          <span style="flex-grow:1;font-size:14px;font-weight:700">王小明 · 李小美</span>
+          <span style="font-size:12px;color:#67736b">8/17</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;border:1px solid #dfe3dc;border-radius:12px;padding:12px 14px;min-height:48px;box-sizing:border-box">
+          <span style="width:26px;height:26px;border-radius:50%;background:#176b45;color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center">王</span>
+          <span style="width:26px;height:26px;border-radius:50%;background:#4a5a50;color:#fff;font-size:12px;font-weight:900;display:grid;place-items:center;margin-left:-14px;border:2px solid #fff">陳</span>
+          <span style="flex-grow:1;font-size:14px;font-weight:700">王小明 · 陳大文</span>
+          <span style="font-size:12px;color:#67736b">8/03</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;flex-grow:1">
+      <div style="font-size:12px;color:#67736b;font-weight:800">所有學生</div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #dfe3dc;min-height:56px;box-sizing:border-box">
+        <span style="width:24px;height:24px;border-radius:7px;background:#176b45;display:grid;place-items:center;color:#fff">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3"/></svg>
+        </span>
+        <span style="flex-grow:1;font-size:15px;font-weight:700">王小明</span>
+        <span style="font-size:12px;color:#67736b">從這頁進入</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #dfe3dc;min-height:56px;box-sizing:border-box">
+        <span style="width:24px;height:24px;border-radius:7px;background:#176b45;display:grid;place-items:center;color:#fff">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3"/></svg>
+        </span>
+        <span style="flex-grow:1;font-size:15px;font-weight:700">李小美</span>
+        <span style="font-size:12px;color:#67736b">目前 52 kg</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #dfe3dc;min-height:56px;box-sizing:border-box">
+        <span style="width:24px;height:24px;border-radius:7px;border:1px solid #dfe3dc;background:#fff"></span>
+        <span style="flex-grow:1;font-size:15px;font-weight:700">陳大文</span>
+        <span style="font-size:12px;color:#67736b">目前 78 kg</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #dfe3dc;min-height:56px;box-sizing:border-box">
+        <span style="width:24px;height:24px;border-radius:7px;border:1px solid #dfe3dc;background:#fff"></span>
+        <span style="flex-grow:1;font-size:15px;font-weight:700">林佳穎</span>
+        <span style="font-size:12px;color:#67736b">尚無身體數據</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 4px;min-height:56px;box-sizing:border-box">
+        <span style="width:24px;height:24px;border-radius:7px;border:1px solid #dfe3dc;background:#fff"></span>
+        <span style="flex-grow:1;font-size:15px;font-weight:700">張若涵</span>
+        <span style="font-size:12px;color:#67736b">目前 49 kg</span>
+      </div>
+    </div>
+
+    <div style="background:#17211b;color:#fff;border-radius:12px;padding:16px;text-align:center;font-weight:700;font-size:16px">開始這堂課（2 人）</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

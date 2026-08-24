@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:Arial,"Noto Sans TC",sans-serif;-webkit-font-smoothing:antialiased;}
+a{color:#176b45;}a:hover{color:#0f4d31;}
+</style>
+</helmet>
+<div style="width:390px;min-height:1240px;background:#f5f4ed;color:#17211b;padding:18px;display:flex;flex-direction:column;gap:14px">
+
+  <div style="color:#67736b;font-size:14px;font-weight:700">← 返回學生列表</div>
+
+  <div style="background:#fff;border:1px solid #dfe3dc;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#176b45;font-weight:800;letter-spacing:2px;font-size:11px">今天一起上課</div>
+      <div style="background:#dff46c;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:900">一對二</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;background:#e7f2eb;border:1px solid #bcd6c5;border-radius:20px;padding:8px 10px 8px 8px;min-height:44px;box-sizing:border-box">
+        <span style="width:28px;height:28px;border-radius:50%;background:#176b45;color:#fff;font-size:13px;font-weight:900;display:grid;place-items:center">王</span>
+        <span style="font-weight:700;font-size:14px">王小明</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;background:#f2ece5;border:1px solid #d9c9b8;border-radius:20px;padding:8px 6px 8px 8px;min-height:44px;box-sizing:border-box">
+        <span style="width:28px;height:28px;border-radius:50%;background:#7e4f2a;color:#fff;font-size:13px;font-weight:900;display:grid;place-items:center">李</span>
+        <span style="font-weight:700;font-size:14px">李小美</span>
+        <span style="width:28px;height:28px;display:grid;place-items:center;color:#67736b">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;border:1px dashed #b6c0b4;color:#67736b;border-radius:20px;padding:8px 14px;min-height:44px;box-sizing:border-box;font-size:14px;font-weight:700">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
+        加入
+      </div>
+    </div>
+  </div>
+
+  <div style="background:#fff;border:1px solid #dfe3dc;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="color:#176b45;font-weight:800;letter-spacing:2px;font-size:11px">新增紀錄</div>
+      <div style="font-size:22px;font-weight:900;letter-spacing:-0.5px">本次訓練內容</div>
+    </div>
+
+    <label style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">上課時間
+      <div style="border:1px solid #dfe3dc;border-radius:10px;padding:12px 14px;font-weight:400;font-size:15px">2026-08-24 19:00</div>
+    </label>
+
+    <div style="display:flex;align-items:center;gap:12px;background:#e7f2eb;border:1px solid #bcd6c5;border-radius:12px;padding:12px 14px">
+      <span style="font-size:24px;font-weight:900;color:#176b45;letter-spacing:-1px">01:30</span>
+      <span style="flex-grow:1;color:#67736b;font-size:12px;font-weight:700">組間休息計時</span>
+      <span style="background:#17211b;color:#fff;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700">開始</span>
+    </div>
+
+    <div style="display:flex;gap:0;border-bottom:1px solid #dfe3dc">
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:6px;align-items:center;padding:12px 0;border-bottom:3px solid #176b45;margin-bottom:-1px">
+        <span style="font-weight:900;font-size:15px;color:#176b45">王小明</span>
+        <span style="font-size:11px;color:#67736b;font-weight:700">3 個動作 · 8 組</span>
+      </div>
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:6px;align-items:center;padding:12px 0">
+        <span style="font-weight:700;font-size:15px;color:#67736b">李小美</span>
+        <span style="font-size:11px;color:#67736b;font-weight:700">2 個動作 · 6 組</span>
+      </div>
+    </div>
+
+    <div style="border:1px solid #dfe3dc;border-radius:14px;padding:16px;background:#fafbf8;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="flex-grow:1;border:1px solid #dfe3dc;border-radius:10px;padding:11px 12px;background:#fff;font-size:15px;font-weight:700">槓鈴深蹲</div>
+        <span style="color:#a33;font-size:13px;font-weight:700">刪除</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#67736b;font-weight:800">誰做這個動作</span>
+        <span style="display:flex;align-items:center;gap:5px;background:#176b45;color:#fff;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:700">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3"/></svg>王
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;background:#7e4f2a;color:#fff;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:700">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3"/></svg>李
+        </span>
+      </div>
+      <div style="display:grid;grid-template-columns:28px 1fr 1fr 65px 28px;gap:8px;align-items:center;font-size:12px;color:#67736b;font-weight:800">
+        <span>組</span><span>次數</span><span>重量</span><span>單位</span><span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:28px 1fr 1fr 65px 28px;gap:8px;align-items:center">
+        <span style="font-size:13px;font-weight:800;color:#67736b">1</span>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:15px">10</div>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:15px">60</div>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:14px">kg</div>
+        <span style="color:#a33;text-align:center;font-size:15px">✕</span>
+      </div>
+      <div style="display:grid;grid-template-columns:28px 1fr 1fr 65px 28px;gap:8px;align-items:center">
+        <span style="font-size:13px;font-weight:800;color:#67736b">2</span>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:15px">10</div>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:15px">65</div>
+        <div style="border:1px solid #dfe3dc;border-radius:10px;padding:9px;background:#fff;font-size:14px">kg</div>
+        <span style="color:#a33;text-align:center;font-size:15px">✕</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <span style="background:#17211b;color:#fff;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700">＋ 新增一組</span>
+        <span style="background:#fff;color:#17211b;border:1px solid #dfe3dc;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700">沿用第一組重量</span>
+      </div>
+    </div>
+
+    <div style="border:1px solid #dfe3dc;border-radius:14px;padding:16px;background:#fafbf8;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="flex-grow:1;border:1px solid #dfe3dc;border-radius:10px;padding:11px 12px;background:#fff;font-size:15px;font-weight:700">引體向上</div>
+        <span style="color:#a33;font-size:13px;font-weight:700">刪除</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#67736b;font-weight:800">誰做這個動作</span>
+        <span style="display:flex;align-items:center;gap:5px;background:#176b45;color:#fff;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:700">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.4l2.6 2.6L10 3"/></svg>王
+        </span>
+        <span style="background:#fff;border:1px solid #dfe3dc;color:#67736b;border-radius:16px;padding:6px 10px;font-size:12px;font-weight:700">李</span>
+      </div>
+      <div style="color:#67736b;font-size:12px;background:#fff;border:1px solid #dfe3dc;border-radius:8px;padding:8px 10px">只有王小明做這個動作，李小美的紀錄不會出現這一項。</div>
+    </div>
+
+    <div style="border:1px dashed #b6c0b4;border-radius:14px;padding:14px;text-align:center;color:#17211b;font-weight:700;font-size:14px">＋ 新增動作</div>
+
+    <label style="display:flex;flex-direction:column;gap:6px;font-weight:700;font-size:14px">王小明的備註
+      <div style="border:1px solid #dfe3dc;border-radius:10px;padding:12px 14px;font-weight:400;font-size:15px;color:#67736b;min-height:64px">深蹲下降速度再放慢</div>
+    </label>
+  </div>
+
+  <div style="position:sticky;bottom:0;background:#f5f4ed;padding-top:6px;display:flex;flex-direction:column;gap:8px">
+    <div style="color:#67736b;font-size:12px;text-align:center">將建立 2 筆紀錄：王小明 3 動作、李小美 2 動作</div>
+    <div style="background:#17211b;color:#fff;border-radius:12px;padding:16px;text-align:center;font-weight:700;font-size:16px">儲存兩人紀錄</div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>
