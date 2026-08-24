@@ -21,6 +21,7 @@ import {
   type TrainingParticipant,
   type TrainingSetRow,
 } from "@/lib/training-form-state";
+import { nextFieldOnEnter, selectOnFocus } from "@/lib/number-input";
 
 type TemplateExercise = { name: string; sets: Array<{ reps: number | null; weight: number | null; unit: "kg" | "lb" }> };
 type EditableSession = { id: string; occurredAt: string; notes: string | null; exercises: TemplateExercise[] };
@@ -178,8 +179,8 @@ export function TrainingSessionForm({ participants, exerciseNames, lastSession, 
               <div className="set-row set-head"><span>組</span><span>次數</span><span>重量</span><span>單位</span><span /></div>
               {sets.map((set, setIndex) => <div className="set-row" key={setIndex}>
                 <strong>{setIndex + 1}</strong>
-                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組次數`} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { reps: event.target.value })} />
-                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組重量`} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.25" value={set.weight} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { weight: event.target.value })} />
+                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組次數`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("reps")} min="0" value={set.reps} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { reps: event.target.value })} />
+                <input aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組重量`} {...selectOnFocus} {...nextFieldOnEnter} type="number" inputMode={trainingInputMode("decimal")} min="0" step="0.25" value={set.weight} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { weight: event.target.value })} />
                 <select aria-label={`${activeName}動作 ${exerciseIndex + 1} 第 ${setIndex + 1} 組單位`} value={set.unit} onChange={event => updateSet(exerciseIndex, activeStudent, setIndex, { unit: event.target.value as "kg" | "lb" })}><option value="kg">kg</option><option value="lb">lb</option></select>
                 <button className="remove-set" type="button" aria-label={`移除第 ${setIndex + 1} 組`} disabled={sets.length === 1} onClick={() => updateSets(exerciseIndex, activeStudent, sets.filter((_, index) => index !== setIndex))}>×</button>
               </div>)}

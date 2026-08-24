@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { selectOnFocus } from "@/lib/number-input";
 import "./RestTimer.css";
 
 const presets = [
@@ -229,7 +230,7 @@ export function RestTimer() {
     {open && <section className="rest-timer-panel" aria-labelledby="rest-timer-title">
       <div className="rest-timer-head"><div><span>組間休息</span><h3 id="rest-timer-title">休息計時器</h3></div><output aria-live="polite" aria-label={`剩餘 ${remaining} 秒`}>{formatTime(remaining)}</output></div>
       <div className="timer-presets" aria-label="快速開始計時">{presets.map(preset => <button type="button" onClick={() => start(preset.seconds)} key={preset.seconds}>{preset.label}</button>)}</div>
-      <div className="custom-timer"><label>自訂秒數<input type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
+      <div className="custom-timer"><label>自訂秒數<input {...selectOnFocus} type="number" inputMode="numeric" min="5" max="3600" step="5" value={customSeconds} onChange={event => setCustomSeconds(event.target.value)} placeholder="例如 45" /></label><button type="button" disabled={!customSeconds || Number(customSeconds) < 5} onClick={() => start(Number(customSeconds))}>開始</button></div>
       {(running || remaining !== duration || done) && <div className="timer-controls">{running ? <button className="button light" type="button" onClick={pause}>暫停</button> : !done && remaining > 0 ? <button className="button light" type="button" onClick={resume}>繼續</button> : null}<button className="button light" type="button" onClick={reset}>重設</button></div>}
       <p className="timer-status" role={done ? "alert" : "status"}>{done ? "時間到！可以開始下一組了。" : running ? "倒數中，時間到會提醒你。" : "點選常用時間即可開始。"}</p>
       <div className="timer-sound">
