@@ -24,3 +24,7 @@
 .exercise-skipped{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 12px;color:var(--muted);font-size:13px;margin:0}
 .save-summary{color:var(--muted);font-size:13px;text-align:center;margin:0}
 .partner-badge{display:inline-flex;align-self:flex-start;align-items:center;background:#f2ece5;border:1px solid #d9c9b8;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700}
+.booking-partners{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0;display:grid;gap:8px}
+.booking-partners legend{font-size:12px;color:var(--muted);font-weight:800;padding:0 6px}
+.booking-partners .participant-chip{cursor:pointer;padding:8px 12px;min-height:40px;font-size:13px}
+.booking-partners .participant-chip input{width:auto;margin:0}
