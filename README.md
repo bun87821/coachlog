@@ -16,3 +16,15 @@
 4. 取得 Railway 網域後，在 Google OAuth 加入 `https://你的網域/api/auth/callback/google`。
 
 行事曆事件 description 若包含 `student:<學生 UUID>`，首頁點擊該事件會直接開啟學生紀錄頁。
+
+## 測試
+
+- `npm test`：單元測試與靜態檢查（不需要資料庫）。
+- `npm run check:cloud`：登入後實際載入雲端頁面，抓 build 與型別檢查看不到的執行期錯誤，
+  例如把事件處理函式傳進 server component。需要一個可寫入的測試資料庫：
+
+  ```
+  CHECK_DATABASE_URL=postgresql://user:password@localhost:5432/coachlog_test npm run check:cloud
+  ```
+
+  沒有設定 `CHECK_DATABASE_URL` 時會直接跳過。檢查用的資料會在結束時刪除。
