@@ -1,5 +1,5 @@
 "use server";
-import { db } from "@/lib/db";import { requireCoach } from "@/lib/guard";import { googleAccessToken } from "@/lib/google-calendar";import { bodyMetricInput } from "@/lib/body-metric";import { revalidatePath } from "next/cache";import { redirect } from "next/navigation";
+import { db } from "@/lib/db";import { requireCoach } from "@/lib/guard";import { googleAccessToken } from "@/lib/google-calendar";import { bodyMetricInput } from "@/lib/body-metric";import { appointmentEventBody } from "@/lib/calendar-event";import { revalidatePath } from "next/cache";import { redirect } from "next/navigation";
 const val=(v:FormDataEntryValue|null)=>String(v||"").trim();
 export async function addStudent(fd:FormData){const u=await requireCoach();const r=await db.query(`INSERT INTO students(coach_id,name,email,phone,notes,sort_order) VALUES($1,$2,$3,$4,$5,(SELECT COALESCE(MAX(sort_order),-1)+1 FROM students WHERE coach_id=$1)) RETURNING id`,[u.id,val(fd.get("name")),val(fd.get("email"))||null,val(fd.get("phone"))||null,val(fd.get("notes"))||null]);redirect(`/students/${r.rows[0].id}`)}
 export async function moveStudent(studentId:string,direction:"up"|"down"){const u=await requireCoach();const client=await db.connect();try{await client.query("BEGIN");const result=await client.query(`SELECT id FROM students WHERE coach_id=$1 ORDER BY sort_order ASC NULLS LAST,created_at DESC,id FOR UPDATE`,[u.id]);const ids=result.rows.map(row=>String(row.id));const current=ids.indexOf(studentId);const target=direction==="up"?current-1:current+1;if(current<0||target<0||target>=ids.length){await client.query("ROLLBACK");return;}[ids[current],ids[target]]=[ids[target],ids[current]];await client.query(`UPDATE students SET sort_order=ordered.position FROM (SELECT id::uuid,position::integer FROM UNNEST($1::text[]) WITH ORDINALITY AS items(id,position)) ordered WHERE students.id=ordered.id`,[ids]);await client.query("COMMIT")}catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}revalidatePath("/dashboard")}
@@ -12,13 +12,11 @@ export async function createAppointment(fd:FormData){
   const found=await db.query(`SELECT id,name FROM students WHERE id = ANY($1::uuid[]) AND coach_id=$2`,[ids,u.id]);
   if(found.rows.length!==ids.length)throw new Error("找不到學生");
   const names=ids.map(id=>found.rows.find((row:{id:string})=>String(row.id)===id)!.name);
-  const duration=Math.max(15,Number(fd.get("duration"))||60);
-  const start=new Date(`${val(fd.get("date"))}T${val(fd.get("time"))}:00+08:00`);
-  const end=new Date(start.getTime()+duration*60_000);
+  const date=val(fd.get("date"));
+  const body=appointmentEventBody({studentIds:ids,names,notes:val(fd.get("notes")),date,time:val(fd.get("time")),duration:Math.max(15,Number(fd.get("duration"))||60),appUrl:process.env.AUTH_URL});
   const token=await googleAccessToken(u.id);
-  const link=`${process.env.AUTH_URL}/students/${ids[0]}${ids.length>1?`?with=${ids.slice(1).join(",")}`:""}`;
-  const response=await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events",{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify({summary:`${names.join("、")}｜私人教練課`,description:`${ids.map(id=>`student:${id}`).join("\n")}\nCoachLog: ${link}\n${val(fd.get("notes"))}`,start:{dateTime:start.toISOString(),timeZone:"Asia/Taipei"},end:{dateTime:end.toISOString(),timeZone:"Asia/Taipei"}})});
+  const response=await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events",{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!response.ok)throw new Error("無法建立 Google Calendar 預約，請重新登入授權");
   revalidatePath("/dashboard");
-  redirect(`/dashboard?date=${val(fd.get("date"))}`);
+  redirect(`/dashboard?date=${date}`);
 }

@@ -602,3 +602,46 @@ article.schedule-row {
 .last-performance strong {
   font-weight: 700;
 }
+
+/* 已預約的課程可以就地調整或取消 */
+.booking-edit {
+  align-self: center;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.booking-edit-form {
+  grid-column: 1 / -1;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fafbf8;
+}
+
+.booking-edit-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.booking-edit-actions button:first-child {
+  flex-grow: 1;
+  min-height: 46px;
+}
+
+.booking-edit-actions .danger-link {
+  border: 1px solid #e2c3c3;
+  border-radius: 12px;
+  min-height: 46px;
+  padding: 12px 16px;
+  font-weight: 700;
+}

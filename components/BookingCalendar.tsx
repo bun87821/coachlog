@@ -4,6 +4,8 @@ import { useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { createAppointment } from "@/app/actions";
 import { formatTaipeiDateTime } from "@/lib/csv";
+import { appointmentDuration, studentIdsFromDescription } from "@/lib/calendar-event";
+import { deleteAppointment, updateAppointment } from "@/app/appointment-actions";
 import { saveCalendarSettings } from "@/app/calendar-settings-actions";
 import { createAvailabilityBlock, removeAvailabilityBlock } from "@/app/calendar-block-actions";
 import "./CalendarSettings.css";
@@ -30,6 +32,10 @@ function SaveSettingsButton({ invalid }: { invalid: boolean }) {
   const { pending } = useFormStatus();
   return <button type="submit" disabled={invalid || pending} aria-busy={pending}>{pending ? "儲存中…" : "儲存行事曆設定"}</button>;
 }
+
+const confirmCancel = (event: React.MouseEvent<HTMLButtonElement>) => {
+  if (!window.confirm("確定要取消這筆預約嗎？Google Calendar 上的活動也會一併刪除。")) event.preventDefault();
+};
 
 export function BookingCalendar({ students, events, settings, blocks, initialDate }: { students: Student[]; events: CalendarEvent[]; settings: Settings; blocks: AvailabilityBlock[]; initialDate?: string }) {
   const today = new Date();
@@ -74,6 +80,7 @@ export function BookingCalendar({ students, events, settings, blocks, initialDat
   const selectedEvents = eventsByDate[selectedDate] || [];
   const [mainStudent, setMainStudent] = useState("");
   const [partnerIds, setPartnerIds] = useState<string[]>([]);
+  const [editingEvent, setEditingEvent] = useState<string | null>(null);
   const selectedBlocks = blocks.filter(block => block.date === selectedDate);
   const availableSlots = slotsFor(selectedDate);
   const selected = dateFor(selectedDate);
@@ -116,7 +123,42 @@ export function BookingCalendar({ students, events, settings, blocks, initialDat
     <div className="selected-day-head"><div><h2>{selectedLabel}</h2><p>{selectedEvents.length} 堂預約・{availableSlots.length} 個時段可預約</p></div><button className="button" type="button" onClick={() => document.getElementById("appointment-form")?.scrollIntoView({ behavior: "smooth" })}>＋ 新增學生預約</button></div>
 
     <div className="day-schedule">
-      <section><h3>已預約</h3>{selectedEvents.length ? selectedEvents.map(event => { const studentIds = [...(event.description?.matchAll(/student:([0-9a-f-]+)/g) || [])].map(match => match[1]); const studentId = studentIds[0]; const params = new URLSearchParams(); if (studentIds.length > 1) params.set("with", studentIds.slice(1).join(",")); if (event.start?.dateTime) params.set("at", formatTaipeiDateTime(event.start.dateTime).replace(" ", "T")); const query = params.toString(); return <a className="schedule-row booked" key={event.id} href={studentId ? `/students/${studentId}${query ? `?${query}` : ""}#new-workout` : event.htmlLink} target={studentId ? undefined : "_blank"}><time>{timeFor(event.start?.dateTime)}</time><strong>{event.summary || "未命名預約"}</strong><span>{event.end?.dateTime ? `${timeFor(event.end.dateTime)} 結束` : "全天"}</span></a>; }) : <p className="muted">這天目前沒有預約。</p>}</section>
+      <section><h3>已預約</h3>{selectedEvents.length ? selectedEvents.map(event => {
+        const studentIds = studentIdsFromDescription(event.description);
+        const studentId = studentIds[0];
+        const params = new URLSearchParams();
+        if (studentIds.length > 1) params.set("with", studentIds.slice(1).join(","));
+        if (event.start?.dateTime) params.set("at", formatTaipeiDateTime(event.start.dateTime).replace(" ", "T"));
+        const query = params.toString();
+        const editing = editingEvent === event.id;
+        const startsAt = event.start?.dateTime ? formatTaipeiDateTime(event.start.dateTime) : "";
+        return <article className="schedule-row booked" key={event.id}>
+          <a className="booking-open" href={studentId ? `/students/${studentId}${query ? `?${query}` : ""}#new-workout` : event.htmlLink} target={studentId ? undefined : "_blank"}>
+            <time>{timeFor(event.start?.dateTime)}</time>
+            <strong>{event.summary || "未命名預約"}</strong>
+            <span>{event.end?.dateTime ? `${timeFor(event.end.dateTime)} 結束` : "全天"}</span>
+          </a>
+          {studentId
+            ? <button type="button" className="booking-edit" aria-expanded={editing} onClick={() => setEditingEvent(editing ? null : event.id)}>{editing ? "收起" : "調整"}</button>
+            : <a className="booking-edit" href={event.htmlLink} target="_blank" rel="noreferrer">開啟</a>}
+          {editing && <form className="booking-edit-form stack" action={updateAppointment}>
+            <input type="hidden" name="eventId" value={event.id} />
+            <label>學生<select name="studentId" defaultValue={studentId} required>{students.map(student => <option value={student.id} key={student.id}>{student.name}</option>)}</select></label>
+            {students.length > 1 && <fieldset className="booking-partners"><legend>一起上課的學生</legend><div className="participant-list">{students.filter(student => student.id !== studentId).map(student => <label className={`participant-chip ${studentIds.includes(student.id) ? "included" : ""}`} key={student.id}><input type="checkbox" name="partnerId" value={student.id} defaultChecked={studentIds.includes(student.id)} />{student.name}</label>)}</div></fieldset>}
+            <label>日期<input name="date" type="date" defaultValue={startsAt.slice(0, 10) || selectedDate} required /></label>
+            <div className="row stacked-fields">
+              <label>開始時間<input name="time" type="time" defaultValue={startsAt.slice(11, 16) || "10:00"} required /></label>
+              <label>課程分鐘<input name="duration" type="number" min="15" step="15" defaultValue={appointmentDuration(event.start?.dateTime, event.end?.dateTime, settings.duration)} required /></label>
+            </div>
+            <textarea name="notes" placeholder="預約備註（選填）" defaultValue={(event.description || "").split("\n").slice(2).join("\n").trim()} />
+            <div className="booking-edit-actions">
+              <button>儲存變更</button>
+              <button className="danger-link" formAction={deleteAppointment} formNoValidate onClick={confirmCancel}>取消預約</button>
+            </div>
+          </form>}
+        </article>;
+      }) : <p className="muted">這天目前沒有預約。</p>}</section>
+
       <section><h3>可預約時段</h3><p className="slot-help">點一下新增預約；手機長按、桌機雙擊可設定休息或不可預約。</p>{availableSlots.length ? <div className="slot-list">{availableSlots.map(slot => <button type="button" onDoubleClick={() => setPendingBlock(slot)} onPointerDown={() => { longPressed.current = false; holdTimer.current = window.setTimeout(() => { longPressed.current = true; setPendingBlock(slot); }, 600); }} onPointerUp={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onPointerCancel={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onPointerLeave={() => { if (holdTimer.current) window.clearTimeout(holdTimer.current); }} onClick={() => { if (longPressed.current) { longPressed.current = false; return; } const input = document.querySelector<HTMLInputElement>('#appointment-form input[name="time"]'); if (input) input.value = slot; document.getElementById("appointment-form")?.scrollIntoView({ behavior: "smooth" }); }} key={slot}>{slot}<small>{settings.duration} 分鐘・長按設定</small></button>)}</div> : <p className="muted">這天沒有可預約時段。</p>}{selectedBlocks.length > 0 && <div className="blocked-slots"><h4>休息／不可預約</h4>{selectedBlocks.map(block => <form action={removeAvailabilityBlock} key={block.id}><input type="hidden" name="id" value={block.id} /><input type="hidden" name="date" value={selectedDate} /><span><strong>{block.time.slice(0, 5)}</strong>　{block.kind === "break" ? "休息" : "不可預約"}</span><button type="submit">解除</button></form>)}</div>}</section>
     </div>
 
